@@ -164,27 +164,26 @@ namespace Nethermind.Init.Steps
 
             worldState.StateRoot = getApi.BlockTree!.Head?.StateRoot ?? Keccak.EmptyTreeHash;
 
-            if (_api.Config<IInitConfig>().DiagnosticMode == DiagnosticMode.VerifyTrie)
+            TrieStore noPruningStore = new(stateWitnessedBy, No.Pruning, Persist.EveryBlock, getApi.LogManager);
+            IWorldState diagStateProvider = new WorldState(noPruningStore, codeDb, getApi.LogManager)
             {
-                Task.Run(() =>
-                {
-                    try
-                    {
-                        _logger!.Info("Collecting trie stats and verifying that no nodes are missing...");
-                        TrieStore noPruningStore = new(stateWitnessedBy, No.Pruning, Persist.EveryBlock, getApi.LogManager);
-                        IWorldState diagStateProvider = new WorldState(noPruningStore, codeDb, getApi.LogManager)
-                        {
-                            StateRoot = getApi.BlockTree!.Head?.StateRoot ?? Keccak.EmptyTreeHash
-                        };
-                        TrieStats stats = diagStateProvider.CollectStats(getApi.DbProvider.CodeDb, _api.LogManager);
-                        _logger.Info($"Starting from {getApi.BlockTree.Head?.Number} {getApi.BlockTree.Head?.StateRoot}{Environment.NewLine}" + stats);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger!.Error(ex.ToString());
-                    }
-                });
-            }
+                StateRoot = getApi.BlockTree!.Head?.StateRoot ?? Keccak.EmptyTreeHash
+            };
+            _logger.Info($"Dump from {getApi.BlockTree.Head?.Number} {getApi.BlockTree.Head?.StateRoot}{Environment.NewLine}");
+            TreeDumper dumper = new() { FileName = $"{getApi.BlockTree.Head?.Number}" };
+            diagStateProvider.Accept(dumper, diagStateProvider.StateRoot);
+
+            Block? newBlock = getApi.BlockTree.FindBlock((getApi.BlockTree.Head?.Number - 1)!.Value);
+            diagStateProvider = new WorldState(noPruningStore, codeDb, getApi.LogManager)
+            {
+                StateRoot = getApi.BlockTree!.Head?.StateRoot ?? Keccak.EmptyTreeHash
+            };
+            _logger.Info($"Dump from {newBlock!.Number} {newBlock!.StateRoot}{Environment.NewLine}");
+            dumper = new() { FileName = $"{newBlock!.Number}" };
+            diagStateProvider.Accept(dumper, diagStateProvider.StateRoot);
+
+            _logger.Info($"Starting from {getApi.BlockTree.Head?.Number} {getApi.BlockTree.Head?.StateRoot}{Environment.NewLine}");
+
 
             // Init state if we need system calls before actual processing starts
             if (getApi.BlockTree!.Head?.StateRoot is not null)
