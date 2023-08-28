@@ -39,6 +39,8 @@ namespace Nethermind.Trie
         /// </summary>
         public long FullScanMemoryBudget { get; set; }
 
+        public bool KeepTrackOfAbsolutePath { get; init; } = false;
+
         public static int AdjustMaxDegreeOfParallelism(int rawMaxDegreeOfParallelism)
         {
             if (rawMaxDegreeOfParallelism == 0)
