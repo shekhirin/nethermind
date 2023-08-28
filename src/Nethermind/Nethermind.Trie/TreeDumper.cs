@@ -22,7 +22,7 @@ namespace Nethermind.Trie
             string leafDescription = isStorage ? "LEAF " : "ACCOUNT ";
             _logger.Info($"COLLECTING {leafDescription}");
             if (isStorage) key = key[64..];
-            File.AppendAllLines($"/root/chiadoDump/{FileName}.txt", new []{$"{rootHash.ToHexString()}:{Nibbles.ToBytes(key).ToHexString()}:{value.ToHexString()}"});
+            File.AppendAllLines($"/nethermind/{FileName}.txt", new []{$"{rootHash.ToHexString()}:{Nibbles.ToBytes(key).ToHexString()}:{value.ToHexString()}"});
             return true;
         }
 
