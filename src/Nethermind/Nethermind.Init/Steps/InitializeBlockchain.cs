@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO.Abstractions;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -105,7 +106,6 @@ namespace Nethermind.Init.Steps
             setApi.MainStateDbWithCache = cachedStateDb;
             IKeyValueStore codeDb = getApi.DbProvider.CodeDb
                 .WitnessedBy(witnessCollector);
-
             IKeyValueStoreWithBatching stateWitnessedBy = setApi.MainStateDbWithCache.WitnessedBy(witnessCollector);
             IPersistenceStrategy persistenceStrategy;
             IPruningStrategy pruningStrategy;
@@ -172,6 +172,11 @@ namespace Nethermind.Init.Steps
             _logger.Info($"Dump from {getApi.BlockTree.Head?.Number} {getApi.BlockTree.Head?.StateRoot}{Environment.NewLine}");
             TreeDumper dumper = new() { FileName = $"{getApi.BlockTree.Head?.Number}" };
             diagStateProvider.Accept(dumper, diagStateProvider.StateRoot);
+
+            foreach (byte[] code in getApi.DbProvider.CodeDb.GetAllValues())
+            {
+                File.AppendAllLines($"/nethermind/data/{getApi.BlockTree.Head?.Number}_Code.txt", new []{code.ToHexString()});
+            }
 
             Block? newBlock = getApi.BlockTree.FindBlock((getApi.BlockTree.Head?.Number - 1)!.Value);
             diagStateProvider = new WorldState(noPruningStore, codeDb, getApi.LogManager)
