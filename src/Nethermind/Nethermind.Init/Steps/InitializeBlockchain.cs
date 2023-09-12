@@ -169,23 +169,23 @@ namespace Nethermind.Init.Steps
             {
                 StateRoot = getApi.BlockTree!.Head?.StateRoot ?? Keccak.EmptyTreeHash
             };
-            _logger.Info($"Dump from {getApi.BlockTree.Head?.Number} {getApi.BlockTree.Head?.StateRoot}{Environment.NewLine}");
-            TreeDumper dumper = new() { FileName = $"{getApi.BlockTree.Head?.Number}" };
-            diagStateProvider.Accept(dumper, diagStateProvider.StateRoot);
+            // _logger.Info($"Dump from {getApi.BlockTree.Head?.Number} {getApi.BlockTree.Head?.StateRoot}{Environment.NewLine}");
+            // TreeDumper dumper = new() { FileName = $"{getApi.BlockTree.Head?.Number}" };
+            // diagStateProvider.Accept(dumper, diagStateProvider.StateRoot);
 
-            foreach (byte[] code in getApi.DbProvider.CodeDb.GetAllValues())
-            {
-                File.AppendAllLines($"/nethermind/data/{getApi.BlockTree.Head?.Number}_Code.txt", new []{code.ToHexString()});
-            }
+            // foreach (byte[] code in getApi.DbProvider.CodeDb.GetAllValues())
+            // {
+            //     File.AppendAllLines($"/nethermind/data/{getApi.BlockTree.Head?.Number}_Code.txt", new []{code.ToHexString()});
+            // }
 
             Block? newBlock = getApi.BlockTree.FindBlock((getApi.BlockTree.Head?.Number - 1)!.Value);
             diagStateProvider = new WorldState(noPruningStore, codeDb, getApi.LogManager)
             {
                 StateRoot = getApi.BlockTree!.Head?.StateRoot ?? Keccak.EmptyTreeHash
             };
-            _logger.Info($"Dump from {newBlock!.Number} {newBlock!.StateRoot}{Environment.NewLine}");
-            dumper = new() { FileName = $"{newBlock!.Number}" };
-            diagStateProvider.Accept(dumper, diagStateProvider.StateRoot);
+            // _logger.Info($"Dump from {newBlock!.Number} {newBlock!.StateRoot}{Environment.NewLine}");
+            // dumper = new() { FileName = $"{newBlock!.Number}" };
+            // diagStateProvider.Accept(dumper, diagStateProvider.StateRoot);
 
             _logger.Info($"Starting from {getApi.BlockTree.Head?.Number} {getApi.BlockTree.Head?.StateRoot}{Environment.NewLine}");
 
