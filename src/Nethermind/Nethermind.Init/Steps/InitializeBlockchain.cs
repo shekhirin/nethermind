@@ -173,6 +173,7 @@ namespace Nethermind.Init.Steps
             TreeDumper dumper = new() { FileName = $"{getApi.BlockTree.Head?.Number}" };
             diagStateProvider.Accept(dumper, diagStateProvider.StateRoot);
 
+            _logger.Info($"Dumping code");
             foreach (byte[] code in getApi.DbProvider.CodeDb.GetAllValues())
             {
                 File.AppendAllLines($"/nethermind/data/{getApi.BlockTree.Head?.Number}_Code.txt", new []{code.ToHexString()});
