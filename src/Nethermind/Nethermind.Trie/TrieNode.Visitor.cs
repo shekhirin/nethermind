@@ -1,12 +1,17 @@
 // SPDX-FileCopyrightText: 2022 Demerzel Solutions Limited
 // SPDX-License-Identifier: LGPL-3.0-only
 
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
 using Nethermind.Core;
 using Nethermind.Core.Buffers;
+using Nethermind.Core.Crypto;
+using Nethermind.Core.Extensions;
 using Nethermind.Serialization.Rlp;
 using Nethermind.Trie.Pruning;
 
@@ -30,7 +35,8 @@ namespace Nethermind.Trie
         /// <param name="nextToVisit"></param>
         /// <exception cref="InvalidDataException"></exception>
         /// <exception cref="TrieException"></exception>
-        internal void AcceptResolvedNode(ITreeVisitor visitor, ITrieNodeResolver nodeResolver, SmallTrieVisitContext trieVisitContext, IList<(TrieNode, SmallTrieVisitContext)> nextToVisit)
+        internal void AcceptResolvedNode(ITreeVisitor visitor, ITrieNodeResolver nodeResolver,
+            SmallTrieVisitContext trieVisitContext, IList<(TrieNode, SmallTrieVisitContext)> nextToVisit)
         {
             switch (NodeType)
             {
@@ -142,7 +148,8 @@ namespace Nethermind.Trie
                 case NodeType.Branch:
                     {
                         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                        void VisitChild(int i, TrieNode? child, ITrieNodeResolver resolver, ITreeVisitor v, TrieVisitContext context)
+                        void VisitChild(int i, TrieNode? child, ITrieNodeResolver resolver, ITreeVisitor v,
+                            TrieVisitContext context)
                         {
                             if (child is not null)
                             {
@@ -161,7 +168,8 @@ namespace Nethermind.Trie
                         }
 
                         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                        void VisitSingleThread(ITreeVisitor treeVisitor, ITrieNodeResolver trieNodeResolver, TrieVisitContext visitContext)
+                        void VisitSingleThread(ITreeVisitor treeVisitor, ITrieNodeResolver trieNodeResolver,
+                            TrieVisitContext visitContext)
                         {
                             // single threaded route
                             for (int i = 0; i < BranchesCount; i++)
@@ -171,7 +179,8 @@ namespace Nethermind.Trie
                         }
 
                         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                        void VisitMultiThread(ITreeVisitor treeVisitor, ITrieNodeResolver trieNodeResolver, TrieVisitContext visitContext, TrieNode?[] children)
+                        void VisitMultiThread(ITreeVisitor treeVisitor, ITrieNodeResolver trieNodeResolver,
+                            TrieVisitContext visitContext, TrieNode?[] children)
                         {
                             // multithreaded route
                             Parallel.For(0, BranchesCount, i =>
@@ -284,6 +293,87 @@ namespace Nethermind.Trie
 
                 default:
                     throw new TrieException($"An attempt was made to visit a node {Keccak} of type {NodeType}");
+            }
+        }
+
+        internal void Accept(ITreeLeafVisitor visitor, ITrieNodeResolver nodeResolver, bool parallel)
+        {
+            if (parallel)
+            {
+                ResolveNode(nodeResolver);
+                if (NodeType == NodeType.Branch)
+                {
+                    TrieNode?[] children = new TrieNode?[BranchesCount];
+                    for (byte i = 0; i < BranchesCount; i++)
+                    {
+                        children[i] = GetChild(nodeResolver, i);
+                    }
+
+                    Parallel.ForEach(children, (child, state, index) =>
+                    {
+                        byte[] address = new byte[ValueKeccak.MemorySize * 2];
+                        address[0] = (byte)index;
+                        Visit(child, nodeResolver, visitor, 1, address);
+                    });
+
+                    return;
+                }
+            }
+
+            byte[] address = new byte[ValueKeccak.MemorySize * 2];
+            Visit(this, nodeResolver, visitor, 0, address);
+
+            static void Visit(TrieNode node, ITrieNodeResolver resolver, ITreeLeafVisitor visitor, int depth, byte[] address)
+            {
+                node.ResolveNode(resolver);
+
+                Span<byte> path;
+                switch (node.NodeType)
+                {
+                    case NodeType.Branch:
+                        for (byte i = 0; i < BranchesCount; i++)
+                        {
+                            TrieNode? child = node.GetChild(resolver, i);
+                            if (child != null)
+                            {
+                                address[depth] = i;
+                                Visit(child, resolver, visitor, depth + 1, address);
+                            }
+                        }
+                        break;
+                    case NodeType.Extension:
+                        TrieNode branch = node.GetChild(resolver, 0);
+                        path = node.Key.AsSpan();
+                        path.CopyTo(address.Slice(depth));
+
+                        Debug.Assert(branch != null);
+
+                        Visit(branch, resolver, visitor, depth + path.Length, address);
+                        break;
+                    case NodeType.Leaf:
+                        path = node.Key.AsSpan();
+                        Span<byte> destination = address.AsSpan(depth);
+
+                        Debug.Assert(path.Length == destination.Length);
+
+                        path.CopyTo(destination);
+
+                        ValueKeccak keccak = new(Nibbles.ToBytes(address));
+
+                        Account account = Rlp.Decode<Account>(node.Value.AsRlpStream());
+
+                        visitor.VisitLeafAccount(keccak, account);
+
+                        // if (account.HasStorage)
+                        // {
+                        //     var storageRoot = resolver.FindCachedOrUnknown(account.StorageRoot);
+                        //     Visit(storageRoot, resolver, visitor, sdfs );
+                        // }
+
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
             }
         }
     }
