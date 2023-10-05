@@ -311,9 +311,9 @@ namespace Nethermind.Trie
 
                     Parallel.ForEach(children, (child, state, index) =>
                     {
-                        byte[] address = new byte[ValueKeccak.MemorySize * 2];
-                        address[0] = (byte)index;
-                        Visit(child, nodeResolver, visitor, 1, address);
+                        byte[] nibbles = new byte[ValueKeccak.MemorySize * 2];
+                        nibbles[0] = (byte)index;
+                        Visit(child, nodeResolver, visitor, 1, nibbles, null);
                     });
 
                     return;
@@ -321,9 +321,9 @@ namespace Nethermind.Trie
             }
 
             byte[] address = new byte[ValueKeccak.MemorySize * 2];
-            Visit(this, nodeResolver, visitor, 0, address);
+            Visit(this, nodeResolver, visitor, 0, address, null);
 
-            static void Visit(TrieNode node, ITrieNodeResolver resolver, ITreeLeafVisitor visitor, int depth, byte[] address)
+            static void Visit(TrieNode node, ITrieNodeResolver resolver, ITreeLeafVisitor visitor, int depth, byte[] nibbles, Keccak? account)
             {
                 node.ResolveNode(resolver);
 
@@ -336,39 +336,47 @@ namespace Nethermind.Trie
                             TrieNode? child = node.GetChild(resolver, i);
                             if (child != null)
                             {
-                                address[depth] = i;
-                                Visit(child, resolver, visitor, depth + 1, address);
+                                nibbles[depth] = i;
+                                Visit(child, resolver, visitor, depth + 1, nibbles, account);
                             }
                         }
                         break;
                     case NodeType.Extension:
                         TrieNode branch = node.GetChild(resolver, 0);
                         path = node.Key.AsSpan();
-                        path.CopyTo(address.Slice(depth));
+                        path.CopyTo(nibbles.Slice(depth));
 
                         Debug.Assert(branch != null);
 
-                        Visit(branch, resolver, visitor, depth + path.Length, address);
+                        Visit(branch, resolver, visitor, depth + path.Length, nibbles, account);
                         break;
                     case NodeType.Leaf:
                         path = node.Key.AsSpan();
-                        Span<byte> destination = address.AsSpan(depth);
+                        Span<byte> destination = nibbles.AsSpan(depth);
 
                         Debug.Assert(path.Length == destination.Length);
 
                         path.CopyTo(destination);
 
-                        ValueKeccak keccak = new(Nibbles.ToBytes(address));
+                        ValueKeccak keccak = new(Nibbles.ToBytes(nibbles));
 
-                        Account account = Rlp.Decode<Account>(node.Value.AsRlpStream());
+                        if (account != null)
+                        {
+                            // this is a storage
+                            visitor.VisitLeafStorage(account, keccak, node.Value);
+                        }
+                        else
+                        {
+                            Account a = Rlp.Decode<Account>(node.Value.AsRlpStream());
+                            visitor.VisitLeafAccount(keccak, a);
 
-                        visitor.VisitLeafAccount(keccak, account);
-
-                        // if (account.HasStorage)
-                        // {
-                        //     var storageRoot = resolver.FindCachedOrUnknown(account.StorageRoot);
-                        //     Visit(storageRoot, resolver, visitor, sdfs );
-                        // }
+                            if (a.HasStorage)
+                            {
+                                TrieNode storageRoot = resolver.FindCachedOrUnknown(a.StorageRoot);
+                                Visit(storageRoot, resolver, visitor, 0, new byte[ValueKeccak.MemorySize * 2],
+                                    keccak.ToKeccak());
+                            }
+                        }
 
                         break;
                     default:
