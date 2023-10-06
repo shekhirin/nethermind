@@ -103,8 +103,8 @@ namespace Nethermind.Consensus.Producers
                         continue;
                     }
 
-                    if (BlobGasCalculator.CalculateBlobGas(blobsCounter + txAmountOfBlobs) >
-                        Eip4844Constants.MaxBlobGasPerBlock)
+                    if (BlobGasCalculator.CalculateBlobGas(blobsCounter + txAmountOfBlobs, parentSpec) >
+                        parentSpec.MaxBlobGasPerBlock)
                     {
                         if (_logger.IsTrace) _logger.Trace($"Declining {tx.ToShortString()}, no more blob space.");
                         continue;

@@ -74,11 +74,11 @@ namespace Nethermind.JsonRpc.Modules.Parity
 
             Block block = searchResult.Object;
             TxReceipt[] receipts = _receiptFinder.Get(block) ?? new TxReceipt[block.Transactions.Length];
-            bool isEip1559Enabled = _specProvider.GetSpec(block.Header).IsEip1559Enabled;
+            IReleaseSpec spec = _specProvider.GetSpec(block.Header);
             IEnumerable<ReceiptForRpc> result = receipts
                 .Zip(block.Transactions, (r, t) =>
                 {
-                    return new ReceiptForRpc(t.Hash, r, t.GetGasInfo(isEip1559Enabled, block.Header), receipts.GetBlockLogFirstIndex(r.Index));
+                    return new ReceiptForRpc(t.Hash, r, t.GetGasInfo(block.Header, spec), receipts.GetBlockLogFirstIndex(r.Index));
                 });
             ReceiptForRpc[] resultAsArray = result.ToArray();
             return ResultWrapper<ReceiptForRpc[]>.Success(resultAsArray);

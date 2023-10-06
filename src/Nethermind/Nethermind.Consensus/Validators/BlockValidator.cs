@@ -279,11 +279,11 @@ public class BlockValidator : IBlockValidator
             blobsInBlock += transaction.BlobVersionedHashes!.Length;
         }
 
-        ulong blobGasUsed = BlobGasCalculator.CalculateBlobGas(blobsInBlock);
+        ulong blobGasUsed = BlobGasCalculator.CalculateBlobGas(blobsInBlock, spec);
 
-        if (blobGasUsed > Eip4844Constants.MaxBlobGasPerBlock)
+        if (blobGasUsed > spec.MaxBlobGasPerBlock)
         {
-            error = $"A block cannot have more than {Eip4844Constants.MaxBlobGasPerBlock} blob gas.";
+            error = $"A block cannot have more than {spec.MaxBlobGasPerBlock} blob gas.";
             if (_logger.IsDebug) _logger.Debug($"{Invalid(block)} {error}.");
             return false;
         }

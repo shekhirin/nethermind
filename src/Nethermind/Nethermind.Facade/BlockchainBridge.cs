@@ -95,8 +95,8 @@ namespace Nethermind.Facade
                     TxReceipt txReceipt = txReceipts.ForTransaction(txHash);
                     int logIndexStart = txReceipts.GetBlockLogFirstIndex(txReceipt.Index);
                     Transaction tx = block.Transactions[txReceipt.Index];
-                    bool is1559Enabled = _specProvider.GetSpecFor1559(block.Number).IsEip1559Enabled;
-                    return (txReceipt, tx.GetGasInfo(is1559Enabled, block.Header), logIndexStart);
+                    IReleaseSpec spec = _specProvider.GetSpec(block.Header);
+                    return (txReceipt, tx.GetGasInfo(block.Header, spec), logIndexStart);
                 }
             }
 
@@ -270,7 +270,7 @@ namespace Nethermind.Facade
 
             if (releaseSpec.IsEip4844Enabled)
             {
-                callHeader.BlobGasUsed = BlobGasCalculator.CalculateBlobGas(transaction);
+                callHeader.BlobGasUsed = BlobGasCalculator.CalculateBlobGas(transaction, releaseSpec);
                 callHeader.ExcessBlobGas = treatBlockHeaderAsParentBlock
                     ? BlobGasCalculator.CalculateExcessBlobGas(blockHeader, releaseSpec)
                     : blockHeader.ExcessBlobGas;

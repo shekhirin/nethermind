@@ -40,7 +40,7 @@ namespace Nethermind.Consensus.Validators
                    ValidateChainId(transaction) &&
                    Validate1559GasFields(transaction, releaseSpec) &&
                    Validate3860Rules(transaction, releaseSpec) &&
-                   Validate4844Fields(transaction);
+                   Validate4844Fields(transaction, releaseSpec);
         }
 
         private static bool Validate3860Rules(Transaction transaction, IReleaseSpec releaseSpec) =>
@@ -106,7 +106,7 @@ namespace Nethermind.Consensus.Validators
             return !spec.ValidateChainId;
         }
 
-        private static bool Validate4844Fields(Transaction transaction)
+        private static bool Validate4844Fields(Transaction transaction, IReleaseSpec spec)
         {
             // Execution-payload version verification
             if (!transaction.SupportsBlobs)
@@ -119,7 +119,7 @@ namespace Nethermind.Consensus.Validators
             if (transaction.To is null ||
                 transaction.MaxFeePerBlobGas is null ||
                 transaction.BlobVersionedHashes is null ||
-                BlobGasCalculator.CalculateBlobGas(transaction.BlobVersionedHashes!.Length) > Eip4844Constants.MaxBlobGasPerTransaction ||
+                BlobGasCalculator.CalculateBlobGas(transaction.BlobVersionedHashes!.Length, spec) > spec.MaxBlobGasPerBlock ||
                 transaction.BlobVersionedHashes!.Length < Eip4844Constants.MinBlobsPerTransaction)
             {
                 return false;

@@ -9,13 +9,13 @@ namespace Nethermind.Evm;
 
 public static class BlobGasCalculator
 {
-    public static ulong CalculateBlobGas(int blobCount) =>
-        (ulong)blobCount * Eip4844Constants.BlobGasPerBlob;
+    public static ulong CalculateBlobGas(int blobCount, IReleaseSpec spec) =>
+        (ulong)blobCount * spec.GasPerBlob.Value;
 
-    public static ulong CalculateBlobGas(Transaction transaction) =>
-        CalculateBlobGas(transaction.BlobVersionedHashes?.Length ?? 0);
+    public static ulong CalculateBlobGas(Transaction transaction, IReleaseSpec spec) =>
+        CalculateBlobGas(transaction.BlobVersionedHashes?.Length ?? 0, spec);
 
-    public static ulong CalculateBlobGas(Transaction[] transactions)
+    public static ulong CalculateBlobGas(Transaction[] transactions, IReleaseSpec spec)
     {
         int blobCount = 0;
         foreach (Transaction tx in transactions)
@@ -26,7 +26,7 @@ public static class BlobGasCalculator
             }
         }
 
-        return CalculateBlobGas(blobCount);
+        return CalculateBlobGas(blobCount, spec);
     }
 
     public static bool TryCalculateBlobGasPrice(BlockHeader header, Transaction transaction, IReleaseSpec spec, out UInt256 blobGasPrice)
@@ -36,7 +36,7 @@ public static class BlobGasCalculator
             blobGasPrice = UInt256.MaxValue;
             return false;
         }
-        return !UInt256.MultiplyOverflow(CalculateBlobGas(transaction), blobGasPricePerUnit, out blobGasPrice);
+        return !UInt256.MultiplyOverflow(CalculateBlobGas(transaction, spec), blobGasPricePerUnit, out blobGasPrice);
     }
 
     public static bool TryCalculateBlobGasPricePerUnit(BlockHeader header, IReleaseSpec spec, out UInt256 blobGasPricePerUnit)
@@ -102,8 +102,8 @@ public static class BlobGasCalculator
 
         ulong excessBlobGas = parentBlockHeader.ExcessBlobGas ?? 0;
         excessBlobGas += parentBlockHeader.BlobGasUsed ?? 0;
-        return excessBlobGas < Eip4844Constants.TargetBlobGasPerBlock
+        return excessBlobGas < releaseSpec.TargetBlobGasPerBlock
             ? 0
-            : (excessBlobGas - Eip4844Constants.TargetBlobGasPerBlock);
+            : (excessBlobGas - releaseSpec.TargetBlobGasPerBlock);
     }
 }
