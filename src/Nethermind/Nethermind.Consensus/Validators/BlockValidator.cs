@@ -261,7 +261,7 @@ public class BlockValidator : IBlockValidator
 
             if (blobGasPrice.IsZero)
             {
-                if (!BlobGasCalculator.TryCalculateBlobGasPricePerUnit(block.Header, out blobGasPrice))
+                if (!BlobGasCalculator.TryCalculateBlobGasPricePerUnit(block.Header, spec, out blobGasPrice))
                 {
                     error = "{nameof(blobGasPrice)} overflow";
                     if (_logger.IsDebug) _logger.Debug($"{Invalid(block)} {error}.");

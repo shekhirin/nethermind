@@ -88,5 +88,15 @@ namespace Nethermind.Specs
             get => IsEip4788Enabled ? _eip4788ContractAddress : null;
             set => _eip4788ContractAddress = value;
         }
+
+        #region EIP-4844 parameters
+        public ulong? GasPerBlob { get; set; }
+
+        public ulong? MaxBlobGasPerBlock { get; set; }
+
+        public UInt256 MinBlobGasPrice { get; set; }
+
+        public ulong? TargetBlobGasPerBlock { get; set; }
+        #endregion
     }
 }

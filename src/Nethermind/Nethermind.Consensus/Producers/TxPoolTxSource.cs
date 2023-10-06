@@ -62,6 +62,7 @@ namespace Nethermind.Consensus.Producers
             // not come back if the block is ignored?
             int blobsCounter = 0;
             UInt256 blobGasPrice = UInt256.Zero;
+            IReleaseSpec parentSpec = _specProvider.GetSpec(parent);
 
             foreach (Transaction tx in transactions)
             {
@@ -81,13 +82,13 @@ namespace Nethermind.Consensus.Producers
                 {
                     if (blobGasPrice.IsZero)
                     {
-                        ulong? excessBlobGas = BlobGasCalculator.CalculateExcessBlobGas(parent, _specProvider.GetSpec(parent));
+                        ulong? excessBlobGas = BlobGasCalculator.CalculateExcessBlobGas(parent, parentSpec);
                         if (excessBlobGas is null)
                         {
                             if (_logger.IsTrace) _logger.Trace($"Declining {tx.ToShortString()}, the specification is not configured to handle shard blob transactions.");
                             continue;
                         }
-                        if (!BlobGasCalculator.TryCalculateBlobGasPricePerUnit(excessBlobGas.Value, out blobGasPrice))
+                        if (!BlobGasCalculator.TryCalculateBlobGasPricePerUnit(excessBlobGas.Value, parentSpec, out blobGasPrice))
                         {
                             if (_logger.IsTrace) _logger.Trace($"Declining {tx.ToShortString()}, failed to calculate blob gas price.");
                             continue;

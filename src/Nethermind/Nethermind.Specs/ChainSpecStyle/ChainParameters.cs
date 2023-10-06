@@ -117,5 +117,35 @@ namespace Nethermind.Specs.ChainSpecStyle
         public ulong? Eip6780TransitionTimestamp { get; set; }
         public ulong? Eip4788TransitionTimestamp { get; set; }
         public Address Eip4788ContractAddress { get; set; }
+
+        #region EIP-4844 parameters
+        /// <summary>
+        /// Gets or sets the <c>GAS_PER_BLOB</c> parameter defined in
+        /// <see href="https://eips.ethereum.org/EIPS/eip-4844#parameters">EIP-4844</see>.
+        /// </summary>
+        /// <remarks>Defaults to 2e17.</remarks>
+        public ulong? GasPerBlob { get; set; } = 1 << 17;
+
+        /// <summary>
+        /// Gets or sets the <c>MAX_BLOB_GAS_PER_BLOCK</c> parameter defined in
+        /// <see href="https://eips.ethereum.org/EIPS/eip-4844#parameters">EIP-4844</see>.
+        /// </summary>
+        /// <remarks>Defaults to 786432.</remarks>
+        public ulong? MaxBlobGasPerBlock { get; set; } = (1 << 17) * 6;
+
+        /// <summary>
+        /// Gets or sets the <c>MIN_BLOB_GASPRICE</c> parameter, in wei, defined in
+        /// <see href="https://eips.ethereum.org/EIPS/eip-4844#parameters">EIP-4844</see>.
+        /// </summary>
+        /// <remarks>Defaults to 1.</remarks>
+        public UInt256 MinBlobGasPrice { get; set; } = UInt256.One;
+
+        /// <summary>
+        /// Gets or sets the <c>TARGET_BLOB_GAS_PER_BLOCK</c> parameter defined in
+        /// <see href="https://eips.ethereum.org/EIPS/eip-4844#parameters">EIP-4844</see>.
+        /// </summary>
+        /// <remarks>Defaults to 393216.</remarks>
+        public ulong? TargetBlobGasPerBlock { get; set; } = (1 << 17) * 3;
+        #endregion
     }
 }

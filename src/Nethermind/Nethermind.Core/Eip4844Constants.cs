@@ -15,5 +15,5 @@ public class Eip4844Constants
     public const ulong MaxBlobGasPerTransaction = MaxBlobGasPerBlock;
 
     public static readonly UInt256 BlobGasUpdateFraction = 3338477;
-    public static readonly UInt256 MinBlobGasPrice = 1;
+    //public static readonly UInt256 MinBlobGasPrice = 1;
 }
