@@ -505,20 +505,25 @@ class TreeLeafVisitorAdapter : IGenericTreeVisitor<TreeLeafContext>
 
     public TreeLeafContext? ShouldVisitExtension(TrieNode parent, TreeLeafContext parentCtx, TrieNode child)
     {
-        child.Key.CopyTo(parentCtx.Nibbles.AsSpan()[parentCtx.Depth..]);
-        parentCtx.Depth += (byte)(parentCtx.Depth+child.Key.Length);
-        return parentCtx; // Should be fine to reuse ctx for extension
+        byte[] newNibbles = new byte[parentCtx.Depth + parent.Key.Length];
+        parentCtx.Nibbles.CopyTo(newNibbles.AsSpan());
+        child.Key.CopyTo(newNibbles.AsSpan()[parentCtx.Depth..]);
+
+        return new TreeLeafContext()
+        {
+            Account = parentCtx.Account, Depth = (byte)(parentCtx.Depth + child.Key.Length), Nibbles = newNibbles
+        };
     }
 
     public TreeLeafContext? ShouldVisitChild(TrieNode parent, TreeLeafContext parentCtx, TrieNode child, int childIdx)
     {
         TreeLeafContext childCtx = parentCtx with
         {
-            Nibbles = new byte[64] // I guess it does not need 64 bytes directly
+            Nibbles = new byte[parentCtx.Depth + 1],
+            Depth = (byte)(parentCtx.Depth+1),
         };
         parentCtx.Nibbles.CopyTo(childCtx.Nibbles.AsSpan());
         childCtx.Nibbles[parentCtx.Depth] = (byte)childIdx;
-        childCtx.Depth++;
 
         return childCtx;
     }
@@ -529,7 +534,11 @@ class TreeLeafVisitorAdapter : IGenericTreeVisitor<TreeLeafContext>
         parent.Key.CopyTo(parentCtx.Nibbles.AsSpan()[parentCtx.Depth..]);
         Keccak keccak = new(Nibbles.ToBytes(parentCtx.Nibbles));
 
-        return new TreeLeafContext() { Account = keccak, Nibbles = new byte[64], Depth = 64 };
+        return new TreeLeafContext() {
+            Account = keccak,
+            Nibbles = Array.Empty<byte>(),
+            Depth = 0 // Reset depth
+        };
     }
 
     public bool ShouldVisitAccount(TrieNode trieNode, TreeLeafContext trieVisitContext)

@@ -1140,12 +1140,11 @@ namespace Nethermind.Trie
                 {
                     FullScanMemoryBudget = 16.GiB(),
                 }, 80);
-            SmallTrieVisitContext rootContext = new SmallTrieVisitContext();
             batchedTrieVisitor.Start(rootHash, new TreeLeafContext()
             {
                 Account = null,
                 Depth = 0,
-                Nibbles = new byte[64],
+                Nibbles = Array.Empty<byte>(),
             }, Environment.ProcessorCount);
 
             /*
