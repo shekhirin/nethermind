@@ -7,3 +7,7 @@
 [submodule "src/Nethermind/Nethermind.GitBook/docs"]
 	path = src/Nethermind/Nethermind.GitBook/docs
 	url = https://github.com/NethermindEth/docs.git
+[submodule "src/Paprika"]
+	path = src/Paprika
+	url = https://github.com/NethermindEth/Paprika.git
+	branch = main
