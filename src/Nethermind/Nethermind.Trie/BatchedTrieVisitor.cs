@@ -37,11 +37,11 @@ namespace Nethermind.Trie;
 /// set decreases reads, however up to a certain point, the time taken for writes is much higher than read, so no
 /// point in increasing memory budget further. For goerli, that seems to be 3GB and for mainnet, that seems to be 8Gb.
 /// </summary>
-public class BatchedTrieVisitor
+public class BatchedTrieVisitor<TCtx> where TCtx : struct
 {
     // Not using shared pool so GC can reclaim them later.
     private ArrayPool<Job> _jobArrayPool = ArrayPool<Job>.Create();
-    private ArrayPool<(TrieNode, SmallTrieVisitContext)> _trieNodePool = ArrayPool<(TrieNode, SmallTrieVisitContext)>.Create();
+    private ArrayPool<(TrieNode, TCtx, byte)> _trieNodePool = ArrayPool<(TrieNode, TCtx, byte)>.Create();
 
     private readonly int _maxBatchSize;
     private readonly long _partitionCount;
@@ -55,12 +55,14 @@ public class BatchedTrieVisitor
     private long _readAheadThreshold;
 
     private readonly ITrieNodeResolver _resolver;
-    private readonly ITreeVisitor _visitor;
+    private readonly IGenericTreeVisitor<TCtx> _visitor;
 
     public BatchedTrieVisitor(
-        ITreeVisitor visitor,
+        IGenericTreeVisitor<TCtx> visitor,
         ITrieNodeResolver resolver,
-        VisitingOptions visitingOptions)
+        VisitingOptions visitingOptions,
+        int contextSize
+    )
     {
         _visitor = visitor;
         _resolver = resolver;
@@ -69,7 +71,7 @@ public class BatchedTrieVisitor
 
         // The keccak + context itself should be 40 byte. But the measured byte seems to be 52 from GC stats POV.
         // The * 2 is just margin. RSS is still higher though, but that could be due to more deserialization.
-        long recordSize = 52 * 2;
+        long recordSize = (32 + contextSize) * 2;
         long recordCount = visitingOptions.FullScanMemoryBudget / recordSize;
         if (recordCount == 0) recordCount = 1;
 
@@ -125,17 +127,17 @@ public class BatchedTrieVisitor
 
     public void Start(
         ValueKeccak root,
-        TrieVisitContext trieVisitContext)
-    {
+        TCtx rootContext,
+        int degreeOfParallelism
+    ) {
         // Start with the root
-        SmallTrieVisitContext rootContext = new(trieVisitContext);
-        _partitions[CalculatePartitionIdx(root)].Push(new Job(root, rootContext));
+        _partitions[CalculatePartitionIdx(root)].Push(new Job(root, rootContext, 0));
         _activeJobs = 1;
         _queuedJobs = 1;
 
         try
         {
-            Task[]? tasks = Enumerable.Range(0, trieVisitContext.MaxDegreeOfParallelism)
+            Task[]? tasks = Enumerable.Range(0, degreeOfParallelism)
                 .Select((_) => Task.Run(BatchedThread))
                 .ToArray();
 
@@ -148,7 +150,7 @@ public class BatchedTrieVisitor
         }
     }
 
-    ArrayPoolList<(TrieNode, SmallTrieVisitContext)>? GetNextBatch()
+    ArrayPoolList<(TrieNode, TCtx, byte)>? GetNextBatch()
     {
         CompactStack<Job>? theStack;
         do
@@ -182,7 +184,7 @@ public class BatchedTrieVisitor
             }
         } while (true);
 
-        ArrayPoolList<(TrieNode, SmallTrieVisitContext)> finalBatch = new(_trieNodePool, _maxBatchSize);
+        ArrayPoolList<(TrieNode, TCtx, byte)> finalBatch = new(_trieNodePool, _maxBatchSize);
 
         if (_activeJobs < _targetCurrentItems)
         {
@@ -191,7 +193,7 @@ public class BatchedTrieVisitor
                 for (int i = 0; i < _maxBatchSize; i++)
                 {
                     if (!theStack.TryPop(out Job item)) break;
-                    finalBatch.Add((_resolver.FindCachedOrUnknown(item.Key.ToKeccak()), item.Context));
+                    finalBatch.Add((_resolver.FindCachedOrUnknown(item.Key.ToKeccak()), item.Context, item.Level));
                     Interlocked.Decrement(ref _queuedJobs);
                 }
             }
@@ -215,7 +217,7 @@ public class BatchedTrieVisitor
             // Sort by level
             if (_activeJobs > _targetCurrentItems)
             {
-                preSort.AsSpan().Sort((item1, item2) => item1.Context.Level.CompareTo(item2.Context.Level) * -1);
+                preSort.AsSpan().Sort((item1, item2) => item1.Level.CompareTo(item2.Level) * -1);
             }
 
             int endIdx = Math.Min(_maxBatchSize, preSort.Count);
@@ -225,7 +227,7 @@ public class BatchedTrieVisitor
                 Job job = preSort[i];
 
                 TrieNode node = _resolver.FindCachedOrUnknown(job.Key.ToKeccak());
-                finalBatch.Add((node, job.Context));
+                finalBatch.Add((node, job.Context, job.Level));
             }
 
             // Add back what we won't process. In reverse order.
@@ -243,20 +245,20 @@ public class BatchedTrieVisitor
     }
 
 
-    void QueueNextNodes(ArrayPoolList<(TrieNode, SmallTrieVisitContext)> batchResult)
+    void QueueNextNodes(ArrayPoolList<(TrieNode, TCtx, byte)> batchResult)
     {
         // Reverse order is important so that higher level appear at the end of the stack.
         for (int i = batchResult.Count - 1; i >= 0; i--)
         {
-            (TrieNode trieNode, SmallTrieVisitContext ctx) = batchResult[i];
+            (TrieNode trieNode, TCtx ctx, byte level) = batchResult[i];
             if (trieNode.NodeType == NodeType.Unknown && trieNode.FullRlp.IsNotNull)
             {
                 // Inline node. Seems rare, so its fine to create new list for this. Does not have a keccak
                 // to queue, so we'll just process it inline.
-                using ArrayPoolList<(TrieNode, SmallTrieVisitContext)> recursiveResult = new(1);
+                using ArrayPoolList<(TrieNode, TCtx, byte)> recursiveResult = new(1);
                 trieNode.ResolveNode(_resolver);
                 Interlocked.Increment(ref _activeJobs);
-                trieNode.AcceptResolvedNode(_visitor, _resolver, ctx, recursiveResult);
+                trieNode.AcceptResolvedNode(_visitor, _resolver, ctx, level, recursiveResult);
                 QueueNextNodes(recursiveResult);
                 continue;
             }
@@ -269,7 +271,7 @@ public class BatchedTrieVisitor
             var theStack = _partitions[partitionIdx];
             lock (theStack)
             {
-                theStack.Push(new Job(keccak, ctx));
+                theStack.Push(new Job(keccak, ctx, level));
             }
         }
 
@@ -279,9 +281,9 @@ public class BatchedTrieVisitor
 
     private void BatchedThread()
     {
-        using ArrayPoolList<(TrieNode, SmallTrieVisitContext)> nextToProcesses = new(_maxBatchSize);
+        using ArrayPoolList<(TrieNode, TCtx, byte)> nextToProcesses = new(_maxBatchSize);
         using ArrayPoolList<int> resolveOrdering = new(_maxBatchSize);
-        ArrayPoolList<(TrieNode, SmallTrieVisitContext)>? currentBatch;
+        ArrayPoolList<(TrieNode, TCtx, byte)>? currentBatch;
         while ((currentBatch = GetNextBatch()) != null)
         {
             // Storing the idx separately as the ordering is important to reduce memory (approximate dfs ordering)
@@ -293,10 +295,10 @@ public class BatchedTrieVisitor
 
                 cur.ResolveKey(_resolver, false);
 
-                SmallTrieVisitContext ctx = currentBatch[i].Item2;
+                TCtx ctx = currentBatch[i].Item2;
 
                 if (cur.FullRlp.IsNotNull) continue;
-                if (cur.Keccak is null) throw new TrieException($"Unable to resolve node without Keccak. ctx: {ctx.Level}, {ctx.ExpectAccounts}, {ctx.IsStorage}, {ctx.BranchChildIndex}");
+                if (cur.Keccak is null) throw new TrieException($"Unable to resolve node without Keccak. ctx: {ctx}");
 
                 resolveOrdering.Add(i);
             }
@@ -318,7 +320,7 @@ public class BatchedTrieVisitor
             {
                 int idx = resolveOrdering[i];
 
-                (TrieNode nodeToResolve, SmallTrieVisitContext ctx) = currentBatch[idx];
+                (TrieNode nodeToResolve, TCtx ctx, byte level) = currentBatch[idx];
                 try
                 {
                     Keccak theKeccak = nodeToResolve.Keccak;
@@ -327,14 +329,14 @@ public class BatchedTrieVisitor
                 }
                 catch (TrieException)
                 {
-                    _visitor.VisitMissingNode(nodeToResolve.Keccak, ctx.ToVisitContext());
+                    _visitor.VisitMissingNode(nodeToResolve, ctx);
                 }
             };
 
             // Going in reverse to reduce memory
             for (int i = currentBatch.Count - 1; i >= 0; i--)
             {
-                (TrieNode nodeToResolve, SmallTrieVisitContext ctx) = currentBatch[i];
+                (TrieNode nodeToResolve, TCtx ctx, byte level) = currentBatch[i];
 
                 nextToProcesses.Clear();
                 if (nodeToResolve.FullRlp.IsNull)
@@ -344,7 +346,7 @@ public class BatchedTrieVisitor
                     return; // missing node
                 }
 
-                nodeToResolve.AcceptResolvedNode(_visitor, _resolver, ctx, nextToProcesses);
+                nodeToResolve.AcceptResolvedNode(_visitor, _resolver, ctx, level, nextToProcesses);
                 QueueNextNodes(nextToProcesses);
             }
 
@@ -356,13 +358,115 @@ public class BatchedTrieVisitor
     private readonly struct Job
     {
         public readonly ValueKeccak Key;
-        public readonly SmallTrieVisitContext Context;
+        public readonly TCtx Context;
+        public readonly byte Level;
 
-        public Job(ValueKeccak key, SmallTrieVisitContext context)
+        public Job(ValueKeccak key, TCtx context, byte level)
         {
             Key = key;
             Context = context;
+            Level = level;
         }
     }
+}
 
+/// <summary>
+/// A ITreeVisitor that allows passing and modifying a custom context struct.
+/// </summary>
+/// <typeparam name="TCtx"></typeparam>
+public interface IGenericTreeVisitor<TCtx> where TCtx: struct
+{
+    TCtx? ShouldVisitExtension(TrieNode parent, TCtx parentCtx, TrieNode child);
+    TCtx? ShouldVisitChild(TrieNode parent, TCtx parentCtx, TrieNode child, int childIdx);
+    TCtx? ShouldVisitStorage(TrieNode parent, TCtx parentCtx, Account account);
+    bool ShouldVisitAccount(TrieNode trieNode, TCtx trieVisitContext);
+
+    void VisitMissingNode(TrieNode node, TCtx trieVisitContext);
+    void VisitMissingAccount(Account account, TCtx trieVisitContext);
+
+    void VisitBranch(TrieNode node, TCtx trieVisitContext);
+
+    void VisitExtension(TrieNode node, TCtx trieVisitContext);
+
+    void VisitLeaf(TrieNode node, TCtx trieVisitContext);
+
+    void VisitAccount(TrieNode node, TCtx trieVisitContext, Account account);
+}
+
+public class ConventionalTreeVisitorAdapter : IGenericTreeVisitor<SmallTrieVisitContext>
+{
+    private readonly ITreeVisitor _treeVisitor;
+
+    public ConventionalTreeVisitorAdapter(ITreeVisitor treeVisitor)
+    {
+        _treeVisitor = treeVisitor;
+    }
+
+    public SmallTrieVisitContext? ShouldVisitExtension(TrieNode parent, SmallTrieVisitContext parentCtx, TrieNode child)
+    {
+        SmallTrieVisitContext newCtx = parentCtx;
+        newCtx.Level++;
+        newCtx.BranchChildIndex=null;
+        return newCtx;
+    }
+
+    public SmallTrieVisitContext? ShouldVisitChild(TrieNode parent, SmallTrieVisitContext parentCtx, TrieNode child, int childIdx)
+    {
+        SmallTrieVisitContext newCtx = parentCtx;
+        newCtx.Level++;
+        newCtx.BranchChildIndex=(byte?)childIdx;
+        return newCtx;
+    }
+
+    public SmallTrieVisitContext? ShouldVisitStorage(TrieNode parent, SmallTrieVisitContext parentCtx, Account account)
+    {
+        SmallTrieVisitContext newCtx = parentCtx;
+        newCtx.Level++;
+        return newCtx;
+    }
+
+    public bool ShouldVisitAccount(TrieNode trieNode, SmallTrieVisitContext trieVisitContext)
+    {
+        return true;
+    }
+
+    public void VisitTree(Keccak rootHash, SmallTrieVisitContext trieVisitContext)
+    {
+        _treeVisitor.VisitTree(rootHash, trieVisitContext.ToVisitContext());
+    }
+
+    public void VisitMissingNode(TrieNode node, SmallTrieVisitContext trieVisitContext)
+    {
+        _treeVisitor.VisitMissingNode(node.Keccak, trieVisitContext.ToVisitContext());
+    }
+
+    public void VisitMissingAccount(Account account, SmallTrieVisitContext trieVisitContext)
+    {
+        _treeVisitor.VisitMissingNode(account.StorageRoot, trieVisitContext.ToVisitContext());
+    }
+
+    public void VisitBranch(TrieNode node, SmallTrieVisitContext trieVisitContext)
+    {
+        _treeVisitor.VisitBranch(node, trieVisitContext.ToVisitContext());
+    }
+
+    public void VisitExtension(TrieNode node, SmallTrieVisitContext trieVisitContext)
+    {
+        _treeVisitor.VisitExtension(node, trieVisitContext.ToVisitContext());
+    }
+
+    public void VisitLeaf(TrieNode node, SmallTrieVisitContext trieVisitContext)
+    {
+        _treeVisitor.VisitLeaf(node, trieVisitContext.ToVisitContext(), node.Value.ToArray());
+    }
+
+    public void VisitAccount(TrieNode node, SmallTrieVisitContext trieVisitContext, Account account)
+    {
+        if (account.HasCode && _treeVisitor.ShouldVisit(account.CodeHash))
+        {
+            trieVisitContext.Level++;
+            trieVisitContext.BranchChildIndex = null;
+            _treeVisitor.VisitCode(account.CodeHash, trieVisitContext.ToVisitContext());
+        }
+    }
 }

@@ -1108,8 +1108,11 @@ namespace Nethermind.Trie
             visitor.VisitTree(rootHash, trieVisitContext);
             if (visitingOptions.FullScanMemoryBudget != 0)
             {
-                BatchedTrieVisitor batchedTrieVisitor = new(visitor, resolver, visitingOptions);
-                batchedTrieVisitor.Start(rootHash, trieVisitContext);
+                ConventionalTreeVisitorAdapter visitorAdapter = new ConventionalTreeVisitorAdapter(visitor);
+                BatchedTrieVisitor<SmallTrieVisitContext> batchedTrieVisitor = new(
+                    visitorAdapter, resolver, visitingOptions, 20);
+                SmallTrieVisitContext rootContext = new SmallTrieVisitContext();
+                batchedTrieVisitor.Start(rootHash, rootContext, visitingOptions.MaxDegreeOfParallelism);
             }
             else
             {

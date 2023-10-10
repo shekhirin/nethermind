@@ -32,18 +32,23 @@ namespace Nethermind.Trie
         /// <param name="visitor"></param>
         /// <param name="nodeResolver"></param>
         /// <param name="trieVisitContext"></param>
+        /// <param name="currentLevel"></param>
         /// <param name="nextToVisit"></param>
         /// <exception cref="InvalidDataException"></exception>
         /// <exception cref="TrieException"></exception>
-        internal void AcceptResolvedNode(ITreeVisitor visitor, ITrieNodeResolver nodeResolver,
-            SmallTrieVisitContext trieVisitContext, IList<(TrieNode, SmallTrieVisitContext)> nextToVisit)
+        internal void AcceptResolvedNode<TCtx>(
+            IGenericTreeVisitor<TCtx> visitor,
+            ITrieNodeResolver nodeResolver,
+            TCtx trieVisitContext,
+            byte currentLevel,
+            IList<(TrieNode, TCtx, byte)> nextToVisit
+        ) where TCtx : struct
         {
             switch (NodeType)
             {
                 case NodeType.Branch:
                     {
-                        visitor.VisitBranch(this, trieVisitContext.ToVisitContext());
-                        trieVisitContext.Level++;
+                        visitor.VisitBranch(this, trieVisitContext);
 
                         for (int i = 0; i < BranchesCount; i++)
                         {
@@ -51,12 +56,10 @@ namespace Nethermind.Trie
                             if (child is not null)
                             {
                                 child.ResolveKey(nodeResolver, false);
-                                if (visitor.ShouldVisit(child.Keccak!))
+                                TCtx? childCtx = visitor.ShouldVisitChild(this, trieVisitContext, child, i);
+                                if (childCtx != null)
                                 {
-                                    SmallTrieVisitContext childCtx = trieVisitContext; // Copy
-                                    childCtx.BranchChildIndex = (byte?)i;
-
-                                    nextToVisit.Add((child, childCtx));
+                                    nextToVisit.Add((child, childCtx.Value, (byte)(currentLevel+1)));
                                 }
 
                                 if (child.IsPersisted)
@@ -70,7 +73,7 @@ namespace Nethermind.Trie
                     }
                 case NodeType.Extension:
                     {
-                        visitor.VisitExtension(this, trieVisitContext.ToVisitContext());
+                        visitor.VisitExtension(this, trieVisitContext);
                         TrieNode child = GetChild(nodeResolver, 0);
                         if (child is null)
                         {
@@ -78,12 +81,10 @@ namespace Nethermind.Trie
                         }
 
                         child.ResolveKey(nodeResolver, false);
-                        if (visitor.ShouldVisit(child.Keccak!))
+                        TCtx? childCtx = visitor.ShouldVisitExtension(this, trieVisitContext, child);
+                        if (childCtx != null)
                         {
-                            trieVisitContext.Level++;
-                            trieVisitContext.BranchChildIndex = null;
-
-                            nextToVisit.Add((child, trieVisitContext));
+                            nextToVisit.Add((child, childCtx.Value, (byte)(currentLevel+Key?.Length??0)));
                         }
 
                         break;
@@ -91,32 +92,23 @@ namespace Nethermind.Trie
 
                 case NodeType.Leaf:
                     {
-                        visitor.VisitLeaf(this, trieVisitContext.ToVisitContext(), Value.ToArray());
-
-                        if (!trieVisitContext.IsStorage && trieVisitContext.ExpectAccounts) // can combine these conditions
+                        visitor.VisitLeaf(this, trieVisitContext);
+                        if (currentLevel <= 32 && visitor.ShouldVisitAccount(this, trieVisitContext)) // Or is it 64?
                         {
                             Account account = _accountDecoder.Decode(Value.AsRlpStream());
-                            if (account.HasCode && visitor.ShouldVisit(account.CodeHash))
-                            {
-                                trieVisitContext.Level++;
-                                trieVisitContext.BranchChildIndex = null;
-                                visitor.VisitCode(account.CodeHash, trieVisitContext.ToVisitContext());
-                                trieVisitContext.Level--;
-                            }
+                            visitor.VisitAccount(this, trieVisitContext, account);
 
-                            if (account.HasStorage && visitor.ShouldVisit(account.StorageRoot))
+                            if (account.HasStorage)
                             {
-                                trieVisitContext.IsStorage = true;
-                                trieVisitContext.Level++;
-                                trieVisitContext.BranchChildIndex = null;
+                                TCtx? childCtx = visitor.ShouldVisitStorage(this, trieVisitContext, account);
 
-                                if (TryResolveStorageRoot(nodeResolver, out TrieNode? storageRoot))
+                                if (childCtx != null && TryResolveStorageRoot(nodeResolver, out TrieNode? storageRoot))
                                 {
-                                    nextToVisit.Add((storageRoot!, trieVisitContext));
+                                    nextToVisit.Add((storageRoot!, childCtx.Value, (byte)(currentLevel + Key?.Length??0)));
                                 }
                                 else
                                 {
-                                    visitor.VisitMissingNode(account.StorageRoot, trieVisitContext.ToVisitContext());
+                                    visitor.VisitMissingAccount(account, trieVisitContext);
                                 }
                             }
                         }
