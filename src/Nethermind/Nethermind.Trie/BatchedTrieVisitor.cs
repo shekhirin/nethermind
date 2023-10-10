@@ -379,18 +379,31 @@ public interface IGenericTreeVisitor<TCtx> where TCtx: struct
     TCtx? ShouldVisitExtension(TrieNode parent, TCtx parentCtx, TrieNode child);
     TCtx? ShouldVisitChild(TrieNode parent, TCtx parentCtx, TrieNode child, int childIdx);
     TCtx? ShouldVisitStorage(TrieNode parent, TCtx parentCtx, Account account);
-    bool ShouldVisitAccount(TrieNode trieNode, TCtx trieVisitContext);
+    bool ShouldVisitAccount(TrieNode trieNode, TCtx trieVisitContext) => true;
 
-    void VisitMissingNode(TrieNode node, TCtx trieVisitContext);
-    void VisitMissingAccount(Account account, TCtx trieVisitContext);
+    void VisitMissingNode(TrieNode node, TCtx trieVisitContext)
+    {
+    }
 
-    void VisitBranch(TrieNode node, TCtx trieVisitContext);
+    void VisitMissingAccount(Account account, TCtx trieVisitContext)
+    {
+    }
 
-    void VisitExtension(TrieNode node, TCtx trieVisitContext);
+    void VisitBranch(TrieNode node, TCtx trieVisitContext)
+    {
+    }
 
-    void VisitLeaf(TrieNode node, TCtx trieVisitContext);
+    void VisitExtension(TrieNode node, TCtx trieVisitContext)
+    {
+    }
 
-    void VisitAccount(TrieNode node, TCtx trieVisitContext, Account account);
+    void VisitLeaf(TrieNode node, TCtx trieVisitContext)
+    {
+    }
+
+    void VisitAccount(TrieNode node, TCtx trieVisitContext, Account account)
+    {
+    }
 }
 
 public class ConventionalTreeVisitorAdapter : IGenericTreeVisitor<SmallTrieVisitContext>
@@ -468,5 +481,75 @@ public class ConventionalTreeVisitorAdapter : IGenericTreeVisitor<SmallTrieVisit
             trieVisitContext.BranchChildIndex = null;
             _treeVisitor.VisitCode(account.CodeHash, trieVisitContext.ToVisitContext());
         }
+    }
+}
+
+// TODO: Nibbles can use ValueKeccak instead for even lower memory usage.
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
+struct TreeLeafContext
+{
+    // Account is shared between contexts so a ref type is a good idea here.
+    internal Keccak? Account { get; init; }
+    internal byte[] Nibbles { get; init; }
+    internal byte Depth { get; set; }
+}
+
+class TreeLeafVisitorAdapter : IGenericTreeVisitor<TreeLeafContext>
+{
+    private readonly ITreeLeafVisitor _baseVisitor;
+
+    public TreeLeafVisitorAdapter(ITreeLeafVisitor baseVisitor)
+    {
+        _baseVisitor = baseVisitor;
+    }
+
+    public TreeLeafContext? ShouldVisitExtension(TrieNode parent, TreeLeafContext parentCtx, TrieNode child)
+    {
+        child.Key.CopyTo(parentCtx.Nibbles.AsSpan()[parentCtx.Depth..]);
+        parentCtx.Depth += (byte)(parentCtx.Depth+child.Key.Length);
+        return parentCtx; // Should be fine to reuse ctx for extension
+    }
+
+    public TreeLeafContext? ShouldVisitChild(TrieNode parent, TreeLeafContext parentCtx, TrieNode child, int childIdx)
+    {
+        TreeLeafContext childCtx = parentCtx with
+        {
+            Nibbles = new byte[64] // I guess it does not need 64 bytes directly
+        };
+        parentCtx.Nibbles.CopyTo(childCtx.Nibbles.AsSpan());
+        childCtx.Nibbles[parentCtx.Depth] = (byte)childIdx;
+        childCtx.Depth++;
+
+        return childCtx;
+    }
+
+    public TreeLeafContext? ShouldVisitStorage(TrieNode parent, TreeLeafContext parentCtx, Account account)
+    {
+        if (parentCtx.Depth + parent.Key.Length != 64) throw new Exception("Well.. something went wrong");
+        parent.Key.CopyTo(parentCtx.Nibbles.AsSpan()[parentCtx.Depth..]);
+        Keccak keccak = new(Nibbles.ToBytes(parentCtx.Nibbles));
+
+        return new TreeLeafContext() { Account = keccak, Nibbles = new byte[64], Depth = 64 };
+    }
+
+    public bool ShouldVisitAccount(TrieNode trieNode, TreeLeafContext trieVisitContext)
+    {
+        return true;
+    }
+
+    public void VisitLeaf(TrieNode node, TreeLeafContext trieVisitContext)
+    {
+        if (trieVisitContext.Account != null)
+        {
+            ValueKeccak account = trieVisitContext.Account!;
+            ValueKeccak storage = new(Nibbles.ToBytes(trieVisitContext.Nibbles));
+
+            _baseVisitor.VisitLeafStorage(account, storage, node.Value);
+        }
+    }
+
+    public void VisitAccount(TrieNode node, TreeLeafContext trieVisitContext, Account account)
+    {
+        _baseVisitor.VisitLeafAccount(node.Keccak, account);
     }
 }

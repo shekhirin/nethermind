@@ -1133,7 +1133,24 @@ namespace Nethermind.Trie
             }
 
             ITrieNodeResolver resolver = new TrieNodeResolverWithReadFlags(TrieStore, ReadFlags.HintCacheMiss);
+
+            TreeLeafVisitorAdapter visitorAdapter = new TreeLeafVisitorAdapter(visitor);
+            BatchedTrieVisitor<TreeLeafContext> batchedTrieVisitor = new(
+                visitorAdapter, resolver, new VisitingOptions()
+                {
+                    FullScanMemoryBudget = 16.GiB(),
+                }, 80);
+            SmallTrieVisitContext rootContext = new SmallTrieVisitContext();
+            batchedTrieVisitor.Start(rootHash, new TreeLeafContext()
+            {
+                Account = null,
+                Depth = 0,
+                Nibbles = new byte[64],
+            }, Environment.ProcessorCount);
+
+            /*
             rootRef?.Accept(visitor, resolver, parallel);
+            */
         }
 
         [DoesNotReturn]
