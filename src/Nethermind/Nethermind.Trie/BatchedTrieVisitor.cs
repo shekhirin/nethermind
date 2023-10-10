@@ -507,11 +507,13 @@ class TreeLeafVisitorAdapter : IGenericTreeVisitor<TreeLeafContext>
     {
         byte[] newNibbles = new byte[parentCtx.Depth + parent.Key.Length];
         parentCtx.Nibbles.CopyTo(newNibbles.AsSpan());
-        child.Key.CopyTo(newNibbles.AsSpan()[parentCtx.Depth..]);
+        parent.Key.CopyTo(newNibbles.AsSpan()[parentCtx.Depth..]);
 
         return new TreeLeafContext()
         {
-            Account = parentCtx.Account, Depth = (byte)(parentCtx.Depth + child.Key.Length), Nibbles = newNibbles
+            Account = parentCtx.Account,
+            Depth = (byte)(parentCtx.Depth + parent.Key.Length),
+            Nibbles = newNibbles
         };
     }
 
@@ -531,8 +533,13 @@ class TreeLeafVisitorAdapter : IGenericTreeVisitor<TreeLeafContext>
     public TreeLeafContext? ShouldVisitStorage(TrieNode parent, TreeLeafContext parentCtx, Account account)
     {
         if (parentCtx.Depth + parent.Key.Length != 64) throw new Exception("Well.. something went wrong");
-        parent.Key.CopyTo(parentCtx.Nibbles.AsSpan()[parentCtx.Depth..]);
-        Keccak keccak = new(Nibbles.ToBytes(parentCtx.Nibbles));
+        Span<byte> allDepth = stackalloc byte[64];
+        parentCtx.Nibbles.CopyTo(allDepth);
+        parent.Key.CopyTo(allDepth[parentCtx.Depth..]);
+
+        Span<byte> asBytes = stackalloc byte[32];
+        Nibbles.ToBytes(allDepth, asBytes);
+        Keccak keccak = new(asBytes);
 
         return new TreeLeafContext() {
             Account = keccak,
