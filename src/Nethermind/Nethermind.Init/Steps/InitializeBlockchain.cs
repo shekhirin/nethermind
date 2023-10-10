@@ -169,8 +169,20 @@ namespace Nethermind.Init.Steps
                 {
                     try
                     {
+
+
                         _logger!.Info("Collecting trie stats and verifying that no nodes are missing...");
                         TrieStore noPruningStore = new(stateWitnessedBy, No.Pruning, Persist.EveryBlock, getApi.LogManager);
+
+                        if (Environment.GetEnvironmentVariable("LEAF_ONLY_STATS") != null)
+                        {
+                            TrieStatsLeafOnlyCollector collector = new(_api.LogManager);
+                            PatriciaTree tree = new StateTree(noPruningStore, _api.LogManager);
+                            tree.Accept(collector, getApi.BlockTree!.Head?.StateRoot ?? Keccak.EmptyTreeHash, true);
+                            return;
+                        }
+
+
                         IWorldState diagStateProvider = new WorldState(noPruningStore, codeDb, getApi.LogManager)
                         {
                             StateRoot = getApi.BlockTree!.Head?.StateRoot ?? Keccak.EmptyTreeHash
