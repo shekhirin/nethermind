@@ -130,5 +130,15 @@ namespace Nethermind.Specs
         public bool IsEip6780Enabled => _spec.IsEip6780Enabled;
         public bool IsEip4788Enabled => _spec.IsEip4788Enabled;
         public Address Eip4788ContractAddress => _spec.Eip4788ContractAddress;
+
+        #region EIP-4844 parameters
+        public ulong GasPerBlob => _spec.GasPerBlob;
+
+        public ulong MaxBlobGasPerBlock => _spec.MaxBlobGasPerBlock;
+
+        public UInt256 MinBlobGasPrice => _spec.MinBlobGasPrice;
+
+        public ulong TargetBlobGasPerBlock => _spec.TargetBlobGasPerBlock;
+        #endregion
     }
 }

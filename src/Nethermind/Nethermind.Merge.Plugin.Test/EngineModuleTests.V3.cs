@@ -133,7 +133,7 @@ public partial class EngineModuleTests
         (IEngineRpcModule rpcModule, string payloadId, _, _) = await BuildAndGetPayloadV3Result(Cancun.Instance, blobTxCount);
         ResultWrapper<GetPayloadV3Result?> result = await rpcModule.engine_getPayloadV3(Bytes.FromHexString(payloadId));
         BlobsBundleV1 getPayloadResultBlobsBundle = result.Data!.BlobsBundle!;
-        Assert.That(result.Data.ExecutionPayload.BlobGasUsed, Is.EqualTo(BlobGasCalculator.CalculateBlobGas(blobTxCount)));
+        Assert.That(result.Data.ExecutionPayload.BlobGasUsed, Is.EqualTo(BlobGasCalculator.CalculateBlobGas(blobTxCount, Cancun.Instance)));
         Assert.That(getPayloadResultBlobsBundle.Blobs!.Length, Is.EqualTo(blobTxCount));
         Assert.That(getPayloadResultBlobsBundle.Commitments!.Length, Is.EqualTo(blobTxCount));
         Assert.That(getPayloadResultBlobsBundle.Proofs!.Length, Is.EqualTo(blobTxCount));

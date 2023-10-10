@@ -168,6 +168,7 @@ public class InitializeBlockchainAuRa : InitializeBlockchain
             AuRaContractGasLimitOverride gasLimitCalculator = new(
                 blockGasLimitContractTransitions.Select(blockGasLimitContractTransition =>
                     new BlockGasLimitContract(
+                        _api.SpecProvider,
                         _api.AbiEncoder,
                         blockGasLimitContractTransition.Value,
                         blockGasLimitContractTransition.Key,
@@ -197,7 +198,7 @@ public class InitializeBlockchainAuRa : InitializeBlockchain
         ValidSealerStrategy validSealerStrategy = new ValidSealerStrategy();
         AuRaStepCalculator auRaStepCalculator = new AuRaStepCalculator(_api.ChainSpec.AuRa.StepDuration, _api.Timestamper, _api.LogManager);
         _api.SealValidator = _sealValidator = new AuRaSealValidator(_api.ChainSpec.AuRa, auRaStepCalculator, _api.BlockTree, _api.ValidatorStore, validSealerStrategy, _api.EthereumEcdsa, _api.LogManager);
-        _api.RewardCalculatorSource = AuRaRewardCalculator.GetSource(_api.ChainSpec.AuRa, _api.AbiEncoder);
+        _api.RewardCalculatorSource = AuRaRewardCalculator.GetSource(_api.ChainSpec.AuRa, _api.AbiEncoder, _api.SpecProvider);
         _api.Sealer = new AuRaSealer(_api.BlockTree, _api.ValidatorStore, auRaStepCalculator, _api.EngineSigner, validSealerStrategy, _api.LogManager);
         _auRaStepCalculator = auRaStepCalculator;
     }

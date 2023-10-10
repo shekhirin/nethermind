@@ -123,7 +123,7 @@ public class TxCertifierFilterTests
     public async Task registry_contract_returns_not_found_when_contract_doesnt_exist()
     {
         using TestTxPermissionsBlockchain chain = await TestContractBlockchain.ForTest<TestTxPermissionsBlockchain, TxCertifierFilterTests>();
-        RegisterContract contract = new(AbiEncoder.Instance, Address.FromNumber(1000), chain.ReadOnlyTransactionProcessorSource);
+        RegisterContract contract = new(_specProvider, AbiEncoder.Instance, Address.FromNumber(1000), chain.ReadOnlyTransactionProcessorSource);
         contract.TryGetAddress(chain.BlockTree.Head.Header, CertifierContract.ServiceTransactionContractRegistryName, out Address _).Should().BeFalse();
     }
 
@@ -141,8 +141,9 @@ public class TxCertifierFilterTests
                 new TrieStore(DbProvider.StateDb, LimboLogs.Instance).AsReadOnly(),
             BlockTree, SpecProvider,
                 LimboLogs.Instance);
-            RegisterContract = new RegisterContract(abiEncoder, ChainSpec.Parameters.Registrar, ReadOnlyTransactionProcessorSource);
+            RegisterContract = new RegisterContract(SpecProvider, abiEncoder, ChainSpec.Parameters.Registrar, ReadOnlyTransactionProcessorSource);
             CertifierContract = new CertifierContract(
+                SpecProvider,
                 abiEncoder,
                 RegisterContract,
                 ReadOnlyTransactionProcessorSource);

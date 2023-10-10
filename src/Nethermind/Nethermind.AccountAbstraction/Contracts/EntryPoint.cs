@@ -5,14 +5,15 @@ using System;
 using Nethermind.Abi;
 using Nethermind.Blockchain.Contracts;
 using Nethermind.Core;
+using Nethermind.Core.Specs;
 using Nethermind.Evm.TransactionProcessing;
 
 namespace Nethermind.AccountAbstraction.Contracts
 {
     public sealed class EntryPoint : CallableContract
     {
-        public EntryPoint(ITransactionProcessor transactionProcessor, IAbiEncoder abiEncoder, Address contractAddress)
-            : base(transactionProcessor, abiEncoder, contractAddress ?? throw new ArgumentNullException(nameof(contractAddress)))
+        public EntryPoint(ITransactionProcessor transactionProcessor, ISpecProvider specProvider, IAbiEncoder abiEncoder, Address contractAddress)
+            : base(transactionProcessor, specProvider, abiEncoder, contractAddress ?? throw new ArgumentNullException(nameof(contractAddress)))
         {
         }
     }

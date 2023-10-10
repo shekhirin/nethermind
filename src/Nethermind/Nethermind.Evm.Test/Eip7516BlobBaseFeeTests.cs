@@ -39,9 +39,9 @@ public class Eip7516BlobBaseFeeTests : VirtualMachineTestsBase
         block.Header.ExcessBlobGas = excessBlobGas;
 
         TestAllTracerWithOutput tracer = CreateTracer();
-        _processor.Execute(transaction, block.Header, tracer);
+        _processor.Execute(transaction, new(block.Header, Spec), tracer);
 
-        _ = BlobGasCalculator.TryCalculateBlobGasPricePerUnit(excessBlobGas, out UInt256 expectedGasPrice);
+        _ = BlobGasCalculator.TryCalculateBlobGasPricePerUnit(excessBlobGas, Spec, out UInt256 expectedGasPrice);
         if (eip7516Enabled)
         {
             AssertStorage((UInt256)0, expectedGasPrice);

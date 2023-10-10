@@ -3,6 +3,7 @@
 
 using System;
 using Nethermind.Core;
+using Nethermind.Core.Specs;
 using Nethermind.Int256;
 
 namespace Nethermind.Evm;
@@ -12,12 +13,12 @@ public readonly struct BlockExecutionContext
     public BlockHeader Header { get; }
     public UInt256? BlobBaseFee { get; }
 
-    public BlockExecutionContext(BlockHeader blockHeader)
+    public BlockExecutionContext(BlockHeader blockHeader, IReleaseSpec spec)
     {
         Header = blockHeader;
         if (blockHeader?.ExcessBlobGas is not null)
         {
-            if (!BlobGasCalculator.TryCalculateBlobGasPricePerUnit(blockHeader.ExcessBlobGas.Value, out UInt256 blobBaseFeeResult))
+            if (!BlobGasCalculator.TryCalculateBlobGasPricePerUnit(blockHeader.ExcessBlobGas.Value, spec, out UInt256 blobBaseFeeResult))
             {
                 throw new OverflowException("Blob gas price calculation led to overflow.");
             }
@@ -25,9 +26,9 @@ public readonly struct BlockExecutionContext
         }
     }
 
-    public static implicit operator BlockExecutionContext(BlockHeader header)
-    {
-        return new BlockExecutionContext(header);
-    }
+    //public static implicit operator BlockExecutionContext(BlockHeader header)
+    //{
+    //    return new BlockExecutionContext(header);
+    //}
 
 }

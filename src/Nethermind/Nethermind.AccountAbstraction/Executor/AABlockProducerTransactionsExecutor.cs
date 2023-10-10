@@ -51,7 +51,7 @@ namespace Nethermind.AccountAbstraction.Executor
 
             int i = 0;
             LinkedHashSet<Transaction> transactionsInBlock = new(ByHashTxComparer.Instance);
-            BlockExecutionContext blkCtx = new(block.Header);
+            BlockExecutionContext blkCtx = new(block.Header, spec);
             foreach (Transaction transaction in transactions)
             {
                 if (IsAccountAbstractionTransaction(transaction))

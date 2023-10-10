@@ -7,6 +7,7 @@ using Nethermind.Blockchain.Contracts;
 using Nethermind.Core;
 using Nethermind.Int256;
 using Nethermind.Evm.TransactionProcessing;
+using Nethermind.Core.Specs;
 
 namespace Nethermind.Consensus.AuRa.Contracts
 {
@@ -95,10 +96,11 @@ namespace Nethermind.Consensus.AuRa.Contracts
         protected IConstantContract Constant { get; }
 
         protected TransactionPermissionContract(
+            ISpecProvider specProvider,
             IAbiEncoder abiEncoder,
             Address contractAddress,
             IReadOnlyTxProcessorSource readOnlyTxProcessorSource)
-            : base(abiEncoder, contractAddress)
+            : base(specProvider, abiEncoder, contractAddress)
         {
             Constant = new PermissionConstantContract(this, readOnlyTxProcessorSource);
         }

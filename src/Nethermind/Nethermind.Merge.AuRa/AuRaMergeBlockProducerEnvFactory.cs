@@ -70,7 +70,7 @@ public class AuRaMergeBlockProducerEnvFactory : BlockProducerEnvFactory
         ILogManager logManager,
         IBlocksConfig blocksConfig)
     {
-        var withdrawalContractFactory = new WithdrawalContractFactory(_auraApi.ChainSpec!.AuRa, _auraApi.AbiEncoder);
+        var withdrawalContractFactory = new WithdrawalContractFactory(_auraApi.ChainSpec!.AuRa, _auraApi.AbiEncoder, specProvider);
 
         return new AuRaMergeBlockProcessor(
             specProvider,

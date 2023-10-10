@@ -241,10 +241,10 @@ namespace Nethermind.Specs.ChainSpecStyle
             releaseSpec.IsEip4788Enabled = (chainSpec.Parameters.Eip4788TransitionTimestamp ?? ulong.MaxValue) <= releaseStartTimestamp;
             releaseSpec.Eip4788ContractAddress = chainSpec.Parameters.Eip4788ContractAddress;
 
-            releaseSpec.GasPerBlob = chainSpec.Parameters.GasPerBlob;
-            releaseSpec.MaxBlobGasPerBlock = chainSpec.Parameters.MaxBlobGasPerBlock;
+            releaseSpec.GasPerBlob = chainSpec.Parameters.GasPerBlob.Value;
+            releaseSpec.MaxBlobGasPerBlock = chainSpec.Parameters.MaxBlobGasPerBlock.Value;
             releaseSpec.MinBlobGasPrice = chainSpec.Parameters.MinBlobGasPrice;
-            releaseSpec.TargetBlobGasPerBlock = chainSpec.Parameters.TargetBlobGasPerBlock;
+            releaseSpec.TargetBlobGasPerBlock = chainSpec.Parameters.TargetBlobGasPerBlock.Value;
 
             return releaseSpec;
         }

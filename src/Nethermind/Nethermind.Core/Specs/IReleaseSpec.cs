@@ -367,13 +367,13 @@ namespace Nethermind.Core.Specs
         /// Gets the <c>GAS_PER_BLOB</c> parameter defined in
         /// <see href="https://eips.ethereum.org/EIPS/eip-4844#parameters">EIP-4844</see>.
         /// </summary>
-        public ulong? GasPerBlob { get; }
+        public ulong GasPerBlob { get; }
 
         /// <summary>
         /// Gets the <c>MAX_BLOB_GAS_PER_BLOCK</c> parameter defined in
         /// <see href="https://eips.ethereum.org/EIPS/eip-4844#parameters">EIP-4844</see>.
         /// </summary>
-        public ulong? MaxBlobGasPerBlock { get; }
+        public ulong MaxBlobGasPerBlock { get; }
 
         /// <summary>
         /// Gets the <c>MIN_BLOB_GASPRICE</c> parameter, in wei, defined in
@@ -385,7 +385,7 @@ namespace Nethermind.Core.Specs
         /// Gets the <c>TARGET_BLOB_GAS_PER_BLOCK</c> parameter defined in
         /// <see href="https://eips.ethereum.org/EIPS/eip-4844#parameters">EIP-4844</see>.
         /// </summary>
-        public ulong? TargetBlobGasPerBlock { get; }
+        public ulong TargetBlobGasPerBlock { get; }
         #endregion
     }
 }

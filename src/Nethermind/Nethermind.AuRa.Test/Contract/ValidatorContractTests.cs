@@ -8,6 +8,7 @@ using Nethermind.Consensus;
 using Nethermind.Consensus.AuRa.Contracts;
 using Nethermind.Core;
 using Nethermind.Core.Crypto;
+using Nethermind.Core.Specs;
 using Nethermind.Core.Test;
 using Nethermind.Core.Test.Builders;
 using Nethermind.Crypto;
@@ -29,6 +30,7 @@ namespace Nethermind.AuRa.Test.Contract
         private IReadOnlyTransactionProcessor _transactionProcessor;
         private IReadOnlyTxProcessorSource _readOnlyTxProcessorSource;
         private IWorldState _stateProvider;
+        private ISpecProvider _specProvider;
 
         [SetUp]
         public void SetUp()
@@ -39,6 +41,7 @@ namespace Nethermind.AuRa.Test.Contract
             _readOnlyTxProcessorSource.Build(TestItem.KeccakA).Returns(_transactionProcessor);
             _stateProvider = Substitute.For<IWorldState>();
             _stateProvider.StateRoot.Returns(TestItem.KeccakA);
+            _specProvider = Substitute.For<ISpecProvider>();
         }
 
         [Test]
@@ -47,6 +50,7 @@ namespace Nethermind.AuRa.Test.Contract
             Action action =
                 () => new ValidatorContract(
                     _transactionProcessor,
+                    _specProvider,
                     AbiEncoder.Instance,
                     null,
                     _stateProvider,
@@ -73,6 +77,7 @@ namespace Nethermind.AuRa.Test.Contract
 
             ValidatorContract contract = new(
                 _transactionProcessor,
+                _specProvider,
                 AbiEncoder.Instance,
                 _contractAddress,
                 _stateProvider,

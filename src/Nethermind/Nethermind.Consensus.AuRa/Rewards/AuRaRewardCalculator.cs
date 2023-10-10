@@ -8,6 +8,7 @@ using Nethermind.Abi;
 using Nethermind.Consensus.AuRa.Contracts;
 using Nethermind.Consensus.Rewards;
 using Nethermind.Core;
+using Nethermind.Core.Specs;
 using Nethermind.Evm.TransactionProcessing;
 using Nethermind.Specs.ChainSpecStyle;
 
@@ -17,12 +18,15 @@ namespace Nethermind.Consensus.AuRa.Rewards
     {
         private readonly StaticRewardCalculator _blockRewardCalculator;
         private readonly IList<IRewardContract> _contracts;
+        private readonly ISpecProvider _specProvider;
 
-        public AuRaRewardCalculator(AuRaParameters auRaParameters, IAbiEncoder abiEncoder, ITransactionProcessor transactionProcessor)
+        public AuRaRewardCalculator(AuRaParameters auRaParameters, IAbiEncoder abiEncoder, ITransactionProcessor transactionProcessor, ISpecProvider specProvider)
         {
             if (auRaParameters is null) throw new ArgumentNullException(nameof(auRaParameters));
             if (abiEncoder is null) throw new ArgumentNullException(nameof(abiEncoder));
             if (transactionProcessor is null) throw new ArgumentNullException(nameof(transactionProcessor));
+
+            _specProvider = specProvider ?? throw new ArgumentNullException(nameof(specProvider));
 
             IList<IRewardContract> BuildTransitions()
             {
@@ -30,7 +34,7 @@ namespace Nethermind.Consensus.AuRa.Rewards
 
                 if (auRaParameters.BlockRewardContractTransitions is not null)
                 {
-                    contracts.AddRange(auRaParameters.BlockRewardContractTransitions.Select(t => new RewardContract(transactionProcessor, abiEncoder, t.Value, t.Key)));
+                    contracts.AddRange(auRaParameters.BlockRewardContractTransitions.Select(t => new RewardContract(transactionProcessor, abiEncoder, t.Value, t.Key, _specProvider)));
                     contracts.Sort((a, b) => a.Activation.CompareTo(b.Activation));
                 }
 
@@ -42,7 +46,7 @@ namespace Nethermind.Consensus.AuRa.Rewards
                         throw new ArgumentException($"{nameof(auRaParameters.BlockRewardContractTransition)} provided for {nameof(auRaParameters.BlockRewardContractAddress)} is higher than first {nameof(auRaParameters.BlockRewardContractTransitions)}.");
                     }
 
-                    contracts.Insert(0, new RewardContract(transactionProcessor, abiEncoder, auRaParameters.BlockRewardContractAddress, contractTransition));
+                    contracts.Insert(0, new RewardContract(transactionProcessor, abiEncoder, auRaParameters.BlockRewardContractAddress, contractTransition, _specProvider));
                 }
 
                 return contracts;
@@ -103,20 +107,22 @@ namespace Nethermind.Consensus.AuRa.Rewards
             return blockRewards;
         }
 
-        public static IRewardCalculatorSource GetSource(AuRaParameters auRaParameters, IAbiEncoder abiEncoder) => new AuRaRewardCalculatorSource(auRaParameters, abiEncoder);
+        public static IRewardCalculatorSource GetSource(AuRaParameters auRaParameters, IAbiEncoder abiEncoder, ISpecProvider specProvider) => new AuRaRewardCalculatorSource(auRaParameters, abiEncoder, specProvider);
 
         private class AuRaRewardCalculatorSource : IRewardCalculatorSource
         {
             private readonly AuRaParameters _auRaParameters;
             private readonly IAbiEncoder _abiEncoder;
+            private readonly ISpecProvider _specProvider;
 
-            public AuRaRewardCalculatorSource(AuRaParameters auRaParameters, IAbiEncoder abiEncoder)
+            public AuRaRewardCalculatorSource(AuRaParameters auRaParameters, IAbiEncoder abiEncoder, ISpecProvider specProvider)
             {
                 _auRaParameters = auRaParameters;
                 _abiEncoder = abiEncoder;
+                _specProvider = specProvider;
             }
 
-            public IRewardCalculator Get(ITransactionProcessor processor) => new AuRaRewardCalculator(_auRaParameters, _abiEncoder, processor);
+            public IRewardCalculator Get(ITransactionProcessor processor) => new AuRaRewardCalculator(_auRaParameters, _abiEncoder, processor, _specProvider);
         }
 
         public static class BenefactorKind

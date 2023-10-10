@@ -71,9 +71,9 @@ namespace Nethermind.Evm.Test
                 .WithTimestamp(timestamp)
                 .WithTransactions(initTx, tx1).WithGasLimit(2 * _gasLimit).TestObject;
 
-            _processor.Execute(initTx, block.Header, NullTxTracer.Instance);
+            _processor.Execute(initTx, new(block.Header, Spec), NullTxTracer.Instance);
             UInt256 contractBalanceAfterInit = TestState.GetBalance(_contractAddress);
-            _processor.Execute(tx1, block.Header, NullTxTracer.Instance);
+            _processor.Execute(tx1, new(block.Header, Spec), NullTxTracer.Instance);
 
             contractBalanceAfterInit.Should().Be(99.Ether());
             AssertSendAll();
@@ -102,9 +102,9 @@ namespace Nethermind.Evm.Test
                 .WithTimestamp(timestamp)
                 .WithTransactions(initTx, tx1).WithGasLimit(2 * _gasLimit).TestObject;
 
-            _processor.Execute(initTx, block.Header, NullTxTracer.Instance);
+            _processor.Execute(initTx, new(block.Header, Spec), NullTxTracer.Instance);
             UInt256 contractBalanceAfterInit = TestState.GetBalance(_contractAddress);
-            _processor.Execute(tx1, block.Header, NullTxTracer.Instance);
+            _processor.Execute(tx1, new(block.Header, Spec), NullTxTracer.Instance);
 
             contractBalanceAfterInit.Should().Be(99.Ether());
             if (onlyOnSameTransaction)
@@ -134,7 +134,7 @@ namespace Nethermind.Evm.Test
                 .WithTimestamp(Timestamp)
                 .WithTransactions(createTx).WithGasLimit(2 * _gasLimit).TestObject;
 
-            _processor.Execute(createTx, block.Header, NullTxTracer.Instance);
+            _processor.Execute(createTx, new(block.Header, Spec), NullTxTracer.Instance);
 
             AssertDestroyed();
             AssertSendAll();
@@ -156,7 +156,7 @@ namespace Nethermind.Evm.Test
                 .WithTimestamp(Timestamp)
                 .WithTransactions(createTx).WithGasLimit(2 * _gasLimit).TestObject;
 
-            _processor.Execute(createTx, block.Header, NullTxTracer.Instance);
+            _processor.Execute(createTx, new(block.Header, Spec), NullTxTracer.Instance);
 
             AssertDestroyed();
             AssertSendAll();
@@ -170,7 +170,7 @@ namespace Nethermind.Evm.Test
                 .WithTimestamp(Timestamp)
                 .WithTransactions(createTx).WithGasLimit(2 * _gasLimit).TestObject;
 
-            _processor.Execute(createTx, block.Header, NullTxTracer.Instance);
+            _processor.Execute(createTx, new(block.Header, Spec), NullTxTracer.Instance);
 
             AssertDestroyed();
             AssertSendAll();

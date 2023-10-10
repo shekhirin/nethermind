@@ -21,7 +21,7 @@ namespace Nethermind.Merge.AuRa.InitializationSteps
 
         protected override BlockProcessor NewBlockProcessor(AuRaNethermindApi api, ITxFilter txFilter, ContractRewriter contractRewriter)
         {
-            var withdrawalContractFactory = new WithdrawalContractFactory(_api.ChainSpec!.AuRa, _api.AbiEncoder);
+            var withdrawalContractFactory = new WithdrawalContractFactory(_api.ChainSpec!.AuRa, _api.AbiEncoder, _api.SpecProvider!);
 
             return new AuRaMergeBlockProcessor(
                 _api.SpecProvider!,

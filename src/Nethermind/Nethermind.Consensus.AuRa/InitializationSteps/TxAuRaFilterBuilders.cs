@@ -49,8 +49,8 @@ namespace Nethermind.Consensus.AuRa.InitializationSteps
             Address? registrar = api.ChainSpec?.Parameters.Registrar;
             if (registrar is not null)
             {
-                RegisterContract registerContract = new(api.AbiEncoder, registrar, readOnlyTxProcessorSource);
-                CertifierContract certifierContract = new(api.AbiEncoder, registerContract, readOnlyTxProcessorSource);
+                RegisterContract registerContract = new(specProvider, api.AbiEncoder, registrar, readOnlyTxProcessorSource);
+                CertifierContract certifierContract = new(specProvider, api.AbiEncoder, registerContract, readOnlyTxProcessorSource);
                 return CreateFilter(new TxCertifierFilter(certifierContract, gasPriceTxFilter, specProvider, api.LogManager), gasPriceTxFilter);
             }
 
@@ -66,8 +66,8 @@ namespace Nethermind.Consensus.AuRa.InitializationSteps
             Address? registrar = api.ChainSpec?.Parameters.Registrar;
             if (registrar is not null)
             {
-                RegisterContract registerContract = new(api.AbiEncoder, registrar, readOnlyTxProcessorSource);
-                CertifierContract certifierContract = new(api.AbiEncoder, registerContract, readOnlyTxProcessorSource);
+                RegisterContract registerContract = new(specProvider, api.AbiEncoder, registrar, readOnlyTxProcessorSource);
+                CertifierContract certifierContract = new(specProvider, api.AbiEncoder, registerContract, readOnlyTxProcessorSource);
                 return CreateFilter(new TxCertifierFilter(certifierContract, baseTxFilter, specProvider, api.LogManager));
             }
 
@@ -139,7 +139,7 @@ namespace Nethermind.Consensus.AuRa.InitializationSteps
             TxPriorityContract? txPriorityContract = null;
             if (usesTxPriorityContract)
             {
-                txPriorityContract = new TxPriorityContract(api.AbiEncoder, txPriorityContractAddress, readOnlyTxProcessorSource);
+                txPriorityContract = new TxPriorityContract(api.SpecProvider, api.AbiEncoder, txPriorityContractAddress, readOnlyTxProcessorSource);
             }
 
             string? auraConfigTxPriorityConfigFilePath = config.TxPriorityConfigFilePath;

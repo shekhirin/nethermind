@@ -108,7 +108,7 @@ namespace Nethermind.Evm.Test
             transaction.To = null;
             transaction.Data = createCode;
             TestAllTracerWithOutput tracer = CreateTracer();
-            _processor.Execute(transaction, block.Header, tracer);
+            _processor.Execute(transaction, new(block.Header, Spec), tracer);
 
             return tracer;
         }

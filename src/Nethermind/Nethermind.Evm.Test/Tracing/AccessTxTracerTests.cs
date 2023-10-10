@@ -64,7 +64,7 @@ namespace Nethermind.Evm.Test.Tracing
         {
             (Block block, Transaction transaction) = PrepareTx(BlockNumber, 100000, code, addresses);
             AccessTxTracer tracer = new();
-            _processor.Execute(transaction, block.Header, tracer);
+            _processor.Execute(transaction, new(block.Header, Spec), tracer);
             return (tracer, block, transaction);
         }
     }

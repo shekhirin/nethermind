@@ -20,7 +20,7 @@ public class BlobGasCalculatorTests
         void Test(IReleaseSpec spec, bool areBlobsEnabled)
         {
             BlockHeader parentHeader = Build.A.BlockHeader
-                .WithBlobGasUsed(BlobGasCalculator.CalculateBlobGas(testCase.parentBlobsCount))
+                .WithBlobGasUsed(BlobGasCalculator.CalculateBlobGas(testCase.parentBlobsCount, spec))
                 .WithExcessBlobGas(testCase.parentExcessBlobGas).TestObject;
 
             Assert.That(BlobGasCalculator.CalculateExcessBlobGas(parentHeader, spec), Is.EqualTo(areBlobsEnabled ? testCase.expectedExcessBlobGas : null));
@@ -47,7 +47,7 @@ public class BlobGasCalculatorTests
     {
         BlockHeader header = Build.A.BlockHeader.WithExcessBlobGas(testCase.excessBlobGas).TestObject;
 
-        bool success = BlobGasCalculator.TryCalculateBlobGasPrice(header, testCase.tx, out UInt256 blobGasPrice);
+        bool success = BlobGasCalculator.TryCalculateBlobGasPrice(header, testCase.tx, Cancun.Instance, out UInt256 blobGasPrice);
 
         Assert.That(success, Is.True);
         Assert.That(blobGasPrice, Is.EqualTo(testCase.expectedCost));
@@ -59,7 +59,7 @@ public class BlobGasCalculatorTests
         var tx = Build.A.Transaction.WithType(TxType.Blob).WithBlobVersionedHashes(1000).TestObject;
         BlockHeader header = Build.A.BlockHeader.WithExcessBlobGas(ulong.MaxValue).TestObject;
 
-        bool success = BlobGasCalculator.TryCalculateBlobGasPrice(header, tx, out UInt256 blobGasPrice);
+        bool success = BlobGasCalculator.TryCalculateBlobGasPrice(header, tx, Cancun.Instance, out UInt256 blobGasPrice);
 
         Assert.That(success, Is.False);
         Assert.That(blobGasPrice, Is.EqualTo(UInt256.MaxValue));

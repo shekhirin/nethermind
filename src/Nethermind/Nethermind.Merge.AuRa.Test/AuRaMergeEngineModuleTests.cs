@@ -116,7 +116,7 @@ public class AuRaMergeEngineModuleTests : EngineModuleTests
                 TxPool = TxPool
             };
 
-            WithdrawalContractFactory withdrawalContractFactory = new(_api.ChainSpec!.AuRa, _api.AbiEncoder);
+            WithdrawalContractFactory withdrawalContractFactory = new(_api.ChainSpec!.AuRa, _api.AbiEncoder, _api.SpecProvider!);
             WithdrawalProcessor = new AuraWithdrawalProcessor(
                     withdrawalContractFactory.Create(TxProcessor),
                     LogManager

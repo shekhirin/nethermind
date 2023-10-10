@@ -104,7 +104,7 @@ namespace Nethermind.Evm.Test
             transaction.To = null;
             transaction.Data = createContract;
             TestAllTracerWithOutput tracer = CreateTracer();
-            _processor.Execute(transaction, block.Header, tracer);
+            _processor.Execute(transaction, new(block.Header, Spec), tracer);
 
             Assert.That(tracer.ReportedActionErrors.All(x => x != EvmExceptionType.InvalidCode), Is.EqualTo(withoutAnyInvalidCodeErrors), $"Code {code}, Context {context}");
         }

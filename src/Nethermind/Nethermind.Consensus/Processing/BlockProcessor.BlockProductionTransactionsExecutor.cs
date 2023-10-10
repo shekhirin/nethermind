@@ -68,7 +68,7 @@ namespace Nethermind.Consensus.Processing
 
                 int i = 0;
                 LinkedHashSet<Transaction> transactionsInBlock = new(ByHashTxComparer.Instance);
-                BlockExecutionContext blkCtx = new(block.Header);
+                BlockExecutionContext blkCtx = new(block.Header, spec);
                 foreach (Transaction currentTx in transactions)
                 {
                     TxAction action = ProcessTransaction(block, blkCtx, currentTx, i++, receiptsTracer, processingOptions, transactionsInBlock);

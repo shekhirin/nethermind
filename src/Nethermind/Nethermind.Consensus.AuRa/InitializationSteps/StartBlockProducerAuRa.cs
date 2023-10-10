@@ -313,6 +313,7 @@ public class StartBlockProducerAuRa
                 ISigner signerLocal) =>
                 randomnessContractAddressPerBlock
                     .Select(kvp => new RandomContract(
+                        _api.SpecProvider,
                         abiEncoder,
                         kvp.Value,
                         txProcessorSource,
@@ -383,6 +384,7 @@ public class StartBlockProducerAuRa
             AuRaContractGasLimitOverride auRaContractGasLimitOverride = new(
                     blockGasLimitContractTransitions.Select(blockGasLimitContractTransition =>
                             new BlockGasLimitContract(
+                                _api.SpecProvider,
                                 _api.AbiEncoder,
                                 blockGasLimitContractTransition.Value,
                                 blockGasLimitContractTransition.Key,

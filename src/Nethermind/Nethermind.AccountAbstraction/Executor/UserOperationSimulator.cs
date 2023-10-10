@@ -128,7 +128,7 @@ namespace Nethermind.AccountAbstraction.Executor
                 _logger
             );
 
-            transactionProcessor.Trace(transaction, new BlockExecutionContext(parent), txTracer);
+            transactionProcessor.Trace(transaction, new(parent, _specProvider.GetSpec(parent)), txTracer);
 
             FailedOp? failedOp = _userOperationTxBuilder.DecodeEntryPointOutputError(txTracer.Output);
 
@@ -259,7 +259,7 @@ namespace Nethermind.AccountAbstraction.Executor
                 : blockHeader.BaseFeePerGas;
 
             transaction.Hash = transaction.CalculateHash();
-            transactionProcessor.CallAndRestore(transaction, new BlockExecutionContext(callHeader), tracer);
+            transactionProcessor.CallAndRestore(transaction, new(callHeader, _specProvider.GetSpec(callHeader)), tracer);
         }
     }
 }

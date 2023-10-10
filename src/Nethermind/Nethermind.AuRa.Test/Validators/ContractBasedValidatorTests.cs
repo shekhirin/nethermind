@@ -30,6 +30,7 @@ using NSubstitute;
 using NUnit.Framework;
 using BlockTree = Nethermind.Blockchain.BlockTree;
 using Nethermind.Evm;
+using Nethermind.Core.Specs;
 
 namespace Nethermind.AuRa.Test.Validators
 {
@@ -53,6 +54,7 @@ namespace Nethermind.AuRa.Test.Validators
         private IValidSealerStrategy _validSealerStrategy;
         private IReadOnlyTxProcessorSource _readOnlyTxProcessorSource;
         private ValidatorContract _validatorContract;
+        private ISpecProvider _specProvider;
 
         [SetUp]
         public void SetUp()
@@ -79,6 +81,8 @@ namespace Nethermind.AuRa.Test.Validators
             _stateProvider.StateRoot.Returns(TestItem.KeccakA);
             _blockTree.Head.Returns(_block);
 
+            _specProvider = Substitute.For<ISpecProvider>();
+
             _abiEncoder
                 .Encode(AbiEncodingStyle.IncludeSignature, Arg.Is<AbiSignature>(s => s.Name == "getValidators"), Arg.Any<object[]>())
                 .Returns(_getValidatorsData.TransactionData);
@@ -87,7 +91,7 @@ namespace Nethermind.AuRa.Test.Validators
                 .Encode(AbiEncodingStyle.IncludeSignature, Arg.Is<AbiSignature>(s => s.Name == "finalizeChange"), Arg.Any<object[]>())
                 .Returns(_finalizeChangeData.TransactionData);
 
-            _validatorContract = new ValidatorContract(_transactionProcessor, _abiEncoder, _contractAddress, _stateProvider, _readOnlyTxProcessorSource, new Signer(0, TestItem.PrivateKeyD, LimboLogs.Instance));
+            _validatorContract = new ValidatorContract(_transactionProcessor, _specProvider, _abiEncoder, _contractAddress, _stateProvider, _readOnlyTxProcessorSource, new Signer(0, TestItem.PrivateKeyD, LimboLogs.Instance));
         }
 
         [Test]

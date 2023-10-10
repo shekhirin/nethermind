@@ -13,7 +13,6 @@ namespace Nethermind.Consensus.AuRa.Contracts
 {
     public sealed class TransactionPermissionContractV3 : TransactionPermissionContract
     {
-        private readonly ISpecProvider _specProvider;
         private static readonly UInt256 Three = 3;
 
         public TransactionPermissionContractV3(
@@ -21,9 +20,8 @@ namespace Nethermind.Consensus.AuRa.Contracts
             Address contractAddress,
             IReadOnlyTxProcessorSource readOnlyTxProcessorSource,
             ISpecProvider specProvider)
-            : base(abiEncoder, contractAddress ?? throw new ArgumentNullException(nameof(contractAddress)), readOnlyTxProcessorSource)
+            : base(specProvider, abiEncoder, contractAddress ?? throw new ArgumentNullException(nameof(contractAddress)), readOnlyTxProcessorSource)
         {
-            _specProvider = specProvider;
         }
 
 
@@ -36,7 +34,7 @@ namespace Nethermind.Consensus.AuRa.Contracts
             // _data Transaction data.
 
             long number = (parentHeader?.Number ?? 0) + 1;
-            bool isEip1559Enabled = _specProvider.GetSpecFor1559(number).IsEip1559Enabled;
+            bool isEip1559Enabled = SpecProvider.GetSpecFor1559(number).IsEip1559Enabled;
             UInt256 gasPrice = isEip1559Enabled && tx.Supports1559 ? tx.MaxFeePerGas : tx.GasPrice;
 
             return new object[]

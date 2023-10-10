@@ -54,7 +54,7 @@ namespace Nethermind.Mev
             LinkedHashSet<Transaction> transactionsInBlock = new(ByHashTxComparer.Instance);
             List<BundleTransaction> bundleTransactions = new();
             Keccak? bundleHash = null;
-            BlockExecutionContext blkCtx = new(block.Header);
+            BlockExecutionContext blkCtx = new(block.Header, spec);
             foreach (Transaction currentTx in transactions)
             {
                 // if we don't accumulate bundle yet

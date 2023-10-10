@@ -7,6 +7,7 @@ using Nethermind.Core;
 using Nethermind.Core.Crypto;
 using Nethermind.Int256;
 using Nethermind.Evm.TransactionProcessing;
+using Nethermind.Core.Specs;
 
 namespace Nethermind.Consensus.AuRa.Contracts
 {
@@ -77,12 +78,13 @@ namespace Nethermind.Consensus.AuRa.Contracts
         private IConstantContract Constant { get; }
 
         public RandomContract(
+            ISpecProvider specProvider,
             IAbiEncoder abiEncoder,
             Address contractAddress,
             IReadOnlyTxProcessorSource readOnlyTxProcessorSource,
             long transitionBlock,
             ISigner signer)
-            : base(abiEncoder, contractAddress ?? throw new ArgumentNullException(nameof(contractAddress)))
+            : base(specProvider, abiEncoder, contractAddress ?? throw new ArgumentNullException(nameof(contractAddress)))
         {
             _signer = signer;
             Activation = transitionBlock;

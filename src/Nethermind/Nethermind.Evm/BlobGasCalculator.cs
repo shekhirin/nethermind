@@ -10,7 +10,7 @@ namespace Nethermind.Evm;
 public static class BlobGasCalculator
 {
     public static ulong CalculateBlobGas(int blobCount, IReleaseSpec spec) =>
-        (ulong)blobCount * spec.GasPerBlob.Value;
+        (ulong)blobCount * spec.GasPerBlob;
 
     public static ulong CalculateBlobGas(Transaction transaction, IReleaseSpec spec) =>
         CalculateBlobGas(transaction.BlobVersionedHashes?.Length ?? 0, spec);

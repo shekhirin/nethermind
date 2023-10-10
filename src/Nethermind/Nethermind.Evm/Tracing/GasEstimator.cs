@@ -52,16 +52,16 @@ namespace Nethermind.Evm.Tracing
                 : header.GasLimit;
 
             // Execute binary search to find the optimal gas estimation.
-            return BinarySearchEstimate(leftBound, rightBound, tx, header, token);
+            return BinarySearchEstimate(leftBound, rightBound, tx, header, releaseSpec, token);
         }
 
-        private long BinarySearchEstimate(long leftBound, long rightBound, Transaction tx, BlockHeader header, CancellationToken token)
+        private long BinarySearchEstimate(long leftBound, long rightBound, Transaction tx, BlockHeader header, IReleaseSpec releaseSpec, CancellationToken token)
         {
             long cap = rightBound;
             while (leftBound + 1 < rightBound)
             {
                 long mid = (leftBound + rightBound) / 2;
-                if (!TryExecutableTransaction(tx, header, mid, token))
+                if (!TryExecutableTransaction(tx, header, mid, releaseSpec, token))
                 {
                     leftBound = mid;
                 }
@@ -71,7 +71,7 @@ namespace Nethermind.Evm.Tracing
                 }
             }
 
-            if (rightBound == cap && !TryExecutableTransaction(tx, header, rightBound, token))
+            if (rightBound == cap && !TryExecutableTransaction(tx, header, rightBound, releaseSpec, token))
             {
                 return 0;
             }
@@ -79,7 +79,7 @@ namespace Nethermind.Evm.Tracing
             return rightBound;
         }
 
-        private bool TryExecutableTransaction(Transaction transaction, BlockHeader block, long gasLimit, CancellationToken token)
+        private bool TryExecutableTransaction(Transaction transaction, BlockHeader block, long gasLimit, IReleaseSpec releaseSpec, CancellationToken token)
         {
             OutOfGasTracer tracer = new();
 
@@ -88,7 +88,7 @@ namespace Nethermind.Evm.Tracing
 
             transaction.GasLimit = gasLimit;
 
-            BlockExecutionContext blCtx = new(block);
+            BlockExecutionContext blCtx = new(block, releaseSpec);
             _transactionProcessor.CallAndRestore(transaction, blCtx, tracer.WithCancellation(token));
 
             transaction.GasLimit = originalGasLimit;

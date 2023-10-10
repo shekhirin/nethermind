@@ -47,7 +47,7 @@ namespace Nethermind.Evm.Test
             }
 
             TestAllTracerWithOutput tracer = CreateTracer();
-            _processor.Execute(transaction, block.Header, tracer);
+            _processor.Execute(transaction, new(block.Header,  Spec), tracer);
 
             if (eip3198Enabled)
             {

@@ -90,13 +90,13 @@ namespace Nethermind.Specs
         }
 
         #region EIP-4844 parameters
-        public ulong? GasPerBlob { get; set; }
+        public ulong GasPerBlob { get; set; }
 
-        public ulong? MaxBlobGasPerBlock { get; set; }
+        public ulong MaxBlobGasPerBlock { get; set; }
 
         public UInt256 MinBlobGasPrice { get; set; }
 
-        public ulong? TargetBlobGasPerBlock { get; set; }
+        public ulong TargetBlobGasPerBlock { get; set; }
         #endregion
     }
 }

@@ -8,6 +8,7 @@ using Nethermind.Core;
 using Nethermind.State;
 using Nethermind.Evm.TransactionProcessing;
 using Nethermind.Facade;
+using Nethermind.Core.Specs;
 
 namespace Nethermind.Consensus.AuRa.Contracts
 {
@@ -56,12 +57,13 @@ namespace Nethermind.Consensus.AuRa.Contracts
 
         public ValidatorContract(
             ITransactionProcessor transactionProcessor,
+            ISpecProvider specProvider,
             IAbiEncoder abiEncoder,
             Address contractAddress,
             IWorldState stateProvider,
             IReadOnlyTxProcessorSource readOnlyTxProcessorSource,
             ISigner signer)
-            : base(transactionProcessor, abiEncoder, contractAddress ?? throw new ArgumentNullException(nameof(contractAddress)))
+            : base(transactionProcessor, specProvider, abiEncoder, contractAddress ?? throw new ArgumentNullException(nameof(contractAddress)))
         {
             _stateProvider = stateProvider ?? throw new ArgumentNullException(nameof(stateProvider));
             _signer = signer ?? throw new ArgumentNullException(nameof(signer));

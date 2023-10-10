@@ -7,6 +7,7 @@ using Nethermind.Blockchain.Contracts;
 using Nethermind.Core;
 using Nethermind.Int256;
 using Nethermind.Evm.TransactionProcessing;
+using Nethermind.Core.Specs;
 
 namespace Nethermind.Consensus.AuRa.Contracts
 {
@@ -21,11 +22,12 @@ namespace Nethermind.Consensus.AuRa.Contracts
         public long Activation { get; }
 
         public BlockGasLimitContract(
+            ISpecProvider specProvider,
             IAbiEncoder abiEncoder,
             Address contractAddress,
             long transitionBlock,
             IReadOnlyTxProcessorSource readOnlyTxProcessorSource)
-            : base(abiEncoder, contractAddress ?? throw new ArgumentNullException(nameof(contractAddress)))
+            : base(specProvider, abiEncoder, contractAddress ?? throw new ArgumentNullException(nameof(contractAddress)))
         {
             Activation = transitionBlock;
             Constant = GetConstant(readOnlyTxProcessorSource);
