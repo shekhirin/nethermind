@@ -93,7 +93,7 @@ namespace Nethermind.Trie
                 case NodeType.Leaf:
                     {
                         visitor.VisitLeaf(this, trieVisitContext);
-                        if (currentLevel <= 32 && visitor.ShouldVisitAccount(this, trieVisitContext)) // Or is it 64?
+                        if (currentLevel < 64 && visitor.ShouldVisitAccount(this, trieVisitContext)) // Or is it 64?
                         {
                             Account account = _accountDecoder.Decode(Value.AsRlpStream());
                             visitor.VisitAccount(this, trieVisitContext, account);
