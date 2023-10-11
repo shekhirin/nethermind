@@ -95,7 +95,7 @@ namespace Ethereum.Test.Base
                 test.Transaction.ChainId = MainnetSpecProvider.Instance.ChainId;
             bool isValid = txValidator.IsWellFormed(test.Transaction, spec);
             if (isValid)
-                transactionProcessor.Execute(test.Transaction, header, txTracer);
+                transactionProcessor.Execute(test.Transaction, new(header, spec), txTracer);
             stopwatch.Stop();
 
             stateProvider.Commit(specProvider.GenesisSpec);
