@@ -45,6 +45,7 @@
     "maximumExtraDataSize": "0x20",
     "maxCodeSize": "0x6000",
     "maxCodeSizeTransitionTimestamp": "0x646e0e4c",
+    "minBlobGasPrice": "1000000000",
     "minGasLimit": "0x1388",
     "eip140Transition": "0x0",
     "eip211Transition": "0x0",
