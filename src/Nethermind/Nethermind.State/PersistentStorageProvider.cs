@@ -20,11 +20,8 @@ namespace Nethermind.State
     /// </summary>
     internal class PersistentStorageProvider : PartialStorageProviderBase
     {
-        private readonly ITrieStore _trieStore;
-        private readonly StateProvider _stateProvider;
+        private readonly IStateOwner _owner;
         private readonly ILogManager? _logManager;
-        internal readonly IStorageTreeFactory _storageTreeFactory;
-        private readonly ResettableDictionary<Address, StorageTree> _storages = new();
 
         /// <summary>
         /// EIP-1283
@@ -33,16 +30,12 @@ namespace Nethermind.State
 
         private readonly ResettableHashSet<StorageCell> _committedThisRound = new();
 
-        public PersistentStorageProvider(ITrieStore? trieStore, StateProvider? stateProvider, ILogManager? logManager, IStorageTreeFactory? storageTreeFactory = null)
+        public PersistentStorageProvider(IStateOwner owner, ILogManager? logManager)
             : base(logManager)
         {
-            _trieStore = trieStore ?? throw new ArgumentNullException(nameof(trieStore));
-            _stateProvider = stateProvider ?? throw new ArgumentNullException(nameof(stateProvider));
+            _owner = owner;
             _logManager = logManager ?? throw new ArgumentNullException(nameof(logManager));
-            _storageTreeFactory = storageTreeFactory ?? new StorageTreeFactory();
         }
-
-        public Keccak StateRoot { get; set; } = null!;
 
         /// <summary>
         /// Reset the storage state
@@ -50,7 +43,6 @@ namespace Nethermind.State
         public override void Reset()
         {
             base.Reset();
-            _storages.Reset();
             _originalValues.Clear();
             _committedThisRound.Clear();
         }
@@ -109,14 +101,14 @@ namespace Nethermind.State
                 throw new InvalidOperationException($"Change after current position ({_currentPosition} + 1) was not null when commiting {nameof(PartialStorageProviderBase)}");
             }
 
-            HashSet<Address> toUpdateRoots = new();
-
             bool isTracing = tracer.IsTracingStorage;
             Dictionary<StorageCell, ChangeTrace>? trace = null;
             if (isTracing)
             {
                 trace = new Dictionary<StorageCell, ChangeTrace>();
             }
+
+            IState state = _owner.State;
 
             for (int i = 0; i <= _currentPosition; i++)
             {
@@ -166,10 +158,8 @@ namespace Nethermind.State
                             _logger.Trace($"  Update {change.StorageCell.Address}_{change.StorageCell.Index} V = {change.Value.ToHexString(true)}");
                         }
 
-                        StorageTree tree = GetOrCreateStorage(change.StorageCell.Address);
                         Db.Metrics.StorageTreeWrites++;
-                        toUpdateRoots.Add(change.StorageCell.Address);
-                        tree.Set(change.StorageCell.Index, change.Value);
+                        state.SetStorage(change.StorageCell, change.Value);
                         if (isTracing)
                         {
                             trace![change.StorageCell] = new ChangeTrace(change.Value);
@@ -178,19 +168,6 @@ namespace Nethermind.State
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
-                }
-            }
-
-            // TODO: it seems that we are unnecessarily recalculating root hashes all the time in storage?
-            foreach (Address address in toUpdateRoots)
-            {
-                // since the accounts could be empty accounts that are removing (EIP-158)
-                if (_stateProvider.AccountExists(address))
-                {
-                    Keccak root = RecalculateRootHash(address);
-
-                    // _logger.Warn($"Recalculating storage root {address}->{root} ({toUpdateRoots.Count})");
-                    _stateProvider.UpdateStorageRoot(address, root);
                 }
             }
 
@@ -204,41 +181,10 @@ namespace Nethermind.State
             }
         }
 
-        /// <summary>
-        /// Commit persisent storage trees
-        /// </summary>
-        /// <param name="blockNumber">Current block number</param>
-        public void CommitTrees(long blockNumber)
-        {
-            // _logger.Warn($"Storage block commit {blockNumber}");
-            foreach (KeyValuePair<Address, StorageTree> storage in _storages)
-            {
-                storage.Value.Commit(blockNumber);
-            }
-
-            // TODO: maybe I could update storage roots only now?
-
-            // only needed here as there is no control over cached storage size otherwise
-            _storages.Reset();
-        }
-
-        private StorageTree GetOrCreateStorage(Address address)
-        {
-            if (!_storages.ContainsKey(address))
-            {
-                StorageTree storageTree = _storageTreeFactory.Create(address, _trieStore, _stateProvider.GetStorageRoot(address), StateRoot, _logManager);
-                return _storages[address] = storageTree;
-            }
-
-            return _storages[address];
-        }
-
         private byte[] LoadFromTree(in StorageCell storageCell)
         {
-            StorageTree tree = GetOrCreateStorage(storageCell.Address);
-
             Db.Metrics.StorageTreeReads++;
-            byte[] value = tree.Get(storageCell.Index);
+            byte[] value = _owner.State.GetStorageAt(storageCell);
             PushToRegistryOnly(storageCell, value);
             return value;
         }
@@ -264,34 +210,6 @@ namespace Nethermind.State
                     tracer.ReportStorageChange(address, before, after);
                 }
             }
-        }
-
-        private Keccak RecalculateRootHash(Address address)
-        {
-            StorageTree storageTree = GetOrCreateStorage(address);
-            storageTree.UpdateRootHash();
-            return storageTree.RootHash;
-        }
-
-        /// <summary>
-        /// Clear all storage at specified address
-        /// </summary>
-        /// <param name="address">Contract address</param>
-        public override void ClearStorage(Address address)
-        {
-            base.ClearStorage(address);
-
-            // here it is important to make sure that we will not reuse the same tree when the contract is revived
-            // by means of CREATE 2 - notice that the cached trie may carry information about items that were not
-            // touched in this block, hence were not zeroed above
-            // TODO: how does it work with pruning?
-            _storages[address] = new StorageTree(_trieStore, Keccak.EmptyTreeHash, _logManager);
-        }
-
-        private class StorageTreeFactory : IStorageTreeFactory
-        {
-            public StorageTree Create(Address address, ITrieStore trieStore, Keccak storageRoot, Keccak stateRoot, ILogManager? logManager)
-                => new(trieStore, storageRoot, logManager);
         }
     }
 }

@@ -33,17 +33,18 @@ namespace Nethermind.State
 
         private readonly List<Change> _keptInCache = new();
         private readonly ILogger _logger;
+        private readonly IStateOwner _owner;
         private readonly IKeyValueStore _codeDb;
 
         private int _capacity = StartCapacity;
         private Change?[] _changes = new Change?[StartCapacity];
         private int _currentPosition = Resettable.EmptyPosition;
 
-        public StateProvider(ITrieStore? trieStore, IKeyValueStore? codeDb, ILogManager? logManager, StateTree? stateTree = null)
+        public StateProvider(IStateOwner owner, IKeyValueStore? codeDb, ILogManager? logManager, StateTree? stateTree = null)
         {
             _logger = logManager?.GetClassLogger<StateProvider>() ?? throw new ArgumentNullException(nameof(logManager));
+            _owner = owner;
             _codeDb = codeDb ?? throw new ArgumentNullException(nameof(codeDb));
-            _tree = stateTree ?? new StateTree(trieStore, logManager);
         }
 
         public void Accept(ITreeVisitor? visitor, Keccak? stateRoot, VisitingOptions? visitingOptions = null)
@@ -61,22 +62,6 @@ namespace Nethermind.State
             _tree.UpdateRootHash();
             _needsStateRootUpdate = false;
         }
-
-        public Keccak StateRoot
-        {
-            get
-            {
-                if (_needsStateRootUpdate)
-                {
-                    throw new InvalidOperationException();
-                }
-
-                return _tree.RootHash;
-            }
-            set => _tree.RootHash = value;
-        }
-
-        internal readonly StateTree _tree;
 
         public bool IsContract(Address address)
         {
@@ -670,7 +655,7 @@ namespace Nethermind.State
         private Account? GetState(Address address)
         {
             Metrics.StateTreeReads++;
-            Account? account = _tree.Get(address);
+            Account? account = _owner.State.Get(address);
             return account;
         }
 
@@ -678,7 +663,7 @@ namespace Nethermind.State
         {
             _needsStateRootUpdate = true;
             Metrics.StateTreeWrites++;
-            _tree.Set(address, account);
+            _owner.State.Set(address, account);
         }
 
         private readonly HashSet<Address> _readsForTracing = new();
@@ -798,21 +783,6 @@ namespace Nethermind.State
             _currentPosition = Resettable.EmptyPosition;
             Array.Clear(_changes, 0, _changes.Length);
             _needsStateRootUpdate = false;
-        }
-
-        public void CommitTree(long blockNumber)
-        {
-            if (_needsStateRootUpdate)
-            {
-                RecalculateStateRoot();
-            }
-
-            _tree.Commit(blockNumber);
-        }
-
-        public void CommitBranch()
-        {
-            // placeholder for the three level Commit->CommitBlock->CommitBranch
         }
 
         // used in EtheereumTests

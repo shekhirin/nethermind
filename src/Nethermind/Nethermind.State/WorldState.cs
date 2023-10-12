@@ -22,7 +22,7 @@ using Nethermind.Trie.Pruning;
 
 namespace Nethermind.State
 {
-    public class WorldState : IWorldState
+    public class WorldState : IWorldState, IStateOwner
     {
         internal readonly StateProvider _stateProvider;
         internal readonly PersistentStorageProvider _persistentStorageProvider;
@@ -40,15 +40,8 @@ namespace Nethermind.State
 
         public WorldState(ITrieStore? trieStore, IKeyValueStore? codeDb, ILogManager? logManager)
         {
-            _stateProvider = new StateProvider(trieStore, codeDb, logManager);
-            _persistentStorageProvider = new PersistentStorageProvider(trieStore, _stateProvider, logManager);
-            _transientStorageProvider = new TransientStorageProvider(logManager);
-        }
-
-        internal WorldState(ITrieStore? trieStore, IKeyValueStore? codeDb, ILogManager? logManager, StateTree stateTree, IStorageTreeFactory storageTreeFactory)
-        {
-            _stateProvider = new StateProvider(trieStore, codeDb, logManager, stateTree);
-            _persistentStorageProvider = new PersistentStorageProvider(trieStore, _stateProvider, logManager, storageTreeFactory);
+            _stateProvider = new StateProvider(this, codeDb, logManager);
+            _persistentStorageProvider = new PersistentStorageProvider(this, logManager);
             _transientStorageProvider = new TransientStorageProvider(logManager);
         }
 
