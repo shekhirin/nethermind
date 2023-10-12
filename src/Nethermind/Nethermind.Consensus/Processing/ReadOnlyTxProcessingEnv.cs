@@ -10,7 +10,6 @@ using Nethermind.Evm;
 using Nethermind.Evm.TransactionProcessing;
 using Nethermind.Logging;
 using Nethermind.State;
-using Nethermind.Trie.Pruning;
 
 // ReSharper disable MemberCanBePrivate.Global
 // ReSharper disable UnusedAutoPropertyAccessor.Global
@@ -28,28 +27,29 @@ namespace Nethermind.Consensus.Processing
 
         public ReadOnlyTxProcessingEnv(
             IDbProvider? dbProvider,
-            IReadOnlyTrieStore? trieStore,
+            IStateFactory factory,
             IBlockTree? blockTree,
             ISpecProvider? specProvider,
             ILogManager? logManager)
-            : this(dbProvider?.AsReadOnly(false), trieStore, blockTree?.AsReadOnly(), specProvider, logManager)
+            : this(dbProvider?.AsReadOnly(false), factory, blockTree?.AsReadOnly(), specProvider, logManager)
         {
         }
 
         public ReadOnlyTxProcessingEnv(
             IReadOnlyDbProvider? readOnlyDbProvider,
-            IReadOnlyTrieStore? readOnlyTrieStore,
+            IStateFactory factory,
             IReadOnlyBlockTree? readOnlyBlockTree,
             ISpecProvider? specProvider,
             ILogManager? logManager)
         {
             if (specProvider is null) throw new ArgumentNullException(nameof(specProvider));
+            IStateFactory factory1 = factory;
 
             DbProvider = readOnlyDbProvider ?? throw new ArgumentNullException(nameof(readOnlyDbProvider));
             ReadOnlyDb codeDb = readOnlyDbProvider.CodeDb.AsReadOnly(true);
 
-            StateReader = new StateReader(readOnlyTrieStore, codeDb, logManager);
-            StateProvider = new WorldState(readOnlyTrieStore, codeDb, logManager);
+            StateReader = new StateReader(factory1, codeDb, logManager);
+            StateProvider = new WorldState(factory1, codeDb, logManager);
 
             BlockTree = readOnlyBlockTree ?? throw new ArgumentNullException(nameof(readOnlyBlockTree));
             BlockhashProvider = new BlockhashProvider(BlockTree, logManager);

@@ -74,8 +74,6 @@ public interface IWorldState : IJournal<Snapshot>, IReadOnlyStateProvider
     /// <param name="address">Contract address</param>
     void ClearStorage(Address address);
 
-    void RecalculateStateRoot();
-
     new Keccak StateRoot { get; set; }
 
     void DeleteAccount(Address address);

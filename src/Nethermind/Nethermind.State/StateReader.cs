@@ -8,24 +8,21 @@ using Nethermind.Db;
 using Nethermind.Int256;
 using Nethermind.Logging;
 using Nethermind.Trie;
-using Nethermind.Trie.Pruning;
 using Metrics = Nethermind.Db.Metrics;
 
 namespace Nethermind.State
 {
     public class StateReader : IStateReader
     {
+        private readonly IStateFactory _factory;
         private readonly IDb _codeDb;
         private readonly ILogger _logger;
-        private readonly StateTree _state;
-        private readonly StorageTree _storage;
 
-        public StateReader(ITrieStore? trieStore, IDb? codeDb, ILogManager? logManager)
+        public StateReader(IStateFactory factory, IDb? codeDb, ILogManager? logManager)
         {
             _logger = logManager?.GetClassLogger<StateReader>() ?? throw new ArgumentNullException(nameof(logManager));
+            _factory = factory;
             _codeDb = codeDb ?? throw new ArgumentNullException(nameof(codeDb));
-            _state = new StateTree(trieStore, logManager);
-            _storage = new StorageTree(trieStore, Keccak.EmptyTreeHash, logManager);
         }
 
         public Account? GetAccount(Keccak stateRoot, Address address)
@@ -33,15 +30,12 @@ namespace Nethermind.State
             return GetState(stateRoot, address);
         }
 
-        public byte[] GetStorage(Keccak storageRoot, in UInt256 index)
+        public byte[]? GetStorage(Keccak stateRoot, Address address, in UInt256 index)
         {
-            if (storageRoot == Keccak.EmptyTreeHash)
-            {
-                return new byte[] { 0 };
-            }
-
             Metrics.StorageTreeReads++;
-            return _storage.Get(index, storageRoot);
+
+            using IState state = _factory.Get(stateRoot);
+            return state.GetStorageAt(new StorageCell(address, index));
         }
 
         public UInt256 GetBalance(Keccak stateRoot, Address address)
@@ -61,10 +55,11 @@ namespace Nethermind.State
 
         public void RunTreeVisitor(ITreeVisitor treeVisitor, Keccak rootHash, VisitingOptions? visitingOptions = null)
         {
-            _state.Accept(treeVisitor, rootHash, visitingOptions);
+            using IState state = _factory.Get(rootHash);
+            state.Accept(treeVisitor, visitingOptions);
         }
 
-        public byte[] GetCode(Keccak stateRoot, Address address)
+        public byte[]? GetCode(Keccak stateRoot, Address address)
         {
             Account? account = GetState(stateRoot, address);
             return account is null ? Array.Empty<byte>() : GetCode(account.CodeHash);
@@ -78,8 +73,9 @@ namespace Nethermind.State
             }
 
             Metrics.StateTreeReads++;
-            Account? account = _state.Get(address, stateRoot);
-            return account;
+
+            using IState state = _factory.Get(stateRoot);
+            return state.Get(address);
         }
     }
 }

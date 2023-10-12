@@ -10,7 +10,6 @@ using Nethermind.Int256;
 using Nethermind.Logging;
 using Nethermind.State.Tracing;
 using Nethermind.Trie;
-using Nethermind.Trie.Pruning;
 
 [assembly: InternalsVisibleTo("Ethereum.Test.Base")]
 [assembly: InternalsVisibleTo("Ethereum.Blockchain.Test")]
@@ -24,23 +23,32 @@ namespace Nethermind.State
 {
     public class WorldState : IWorldState, IStateOwner
     {
+        private readonly IStateFactory _factory;
         internal readonly StateProvider _stateProvider;
         internal readonly PersistentStorageProvider _persistentStorageProvider;
         private readonly TransientStorageProvider _transientStorageProvider;
 
         public Keccak StateRoot
         {
-            get => _stateProvider.StateRoot;
+            get
+            {
+                return _stateProvider.StateRoot;
+            }
             set
             {
                 _stateProvider.StateRoot = value;
-                _persistentStorageProvider.StateRoot = value;
             }
         }
 
-        public WorldState(ITrieStore? trieStore, IKeyValueStore? codeDb, ILogManager? logManager)
+        private IState _state;
+
+        public IState State { get => throw new NotImplementedException(""); }
+
+
+        public WorldState(IStateFactory factory, IKeyValueStore? codeDb, ILogManager? logManager)
         {
-            _stateProvider = new StateProvider(this, codeDb, logManager);
+            _factory = factory;
+            _stateProvider = new StateProvider(this, factory, codeDb, logManager);
             _persistentStorageProvider = new PersistentStorageProvider(this, logManager);
             _transientStorageProvider = new TransientStorageProvider(logManager);
         }
@@ -87,10 +95,7 @@ namespace Nethermind.State
             _persistentStorageProvider.ClearStorage(address);
             _transientStorageProvider.ClearStorage(address);
         }
-        public void RecalculateStateRoot()
-        {
-            _stateProvider.RecalculateStateRoot();
-        }
+
         public void DeleteAccount(Address address)
         {
             _stateProvider.DeleteAccount(address);
@@ -130,9 +135,7 @@ namespace Nethermind.State
 
         public void CommitTree(long blockNumber)
         {
-            _persistentStorageProvider.CommitTrees(blockNumber);
-            _stateProvider.CommitTree(blockNumber);
-            _persistentStorageProvider.StateRoot = _stateProvider.StateRoot;
+            _state.Commit(blockNumber);
         }
 
         public void TouchCode(Keccak codeHash)
