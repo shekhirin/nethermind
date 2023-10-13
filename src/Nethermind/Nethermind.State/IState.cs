@@ -40,7 +40,7 @@ public interface IState : IDisposable
 /// <summary>
 /// The factory allowing to get a state at the given keccak.
 /// </summary>
-public interface IStateFactory : IDisposable
+public interface IStateFactory : IAsyncDisposable
 {
     IState Get(Keccak stateRoot);
 
