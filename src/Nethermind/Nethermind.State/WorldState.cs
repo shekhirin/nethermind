@@ -30,13 +30,12 @@ namespace Nethermind.State
 
         public Keccak StateRoot
         {
-            get
-            {
-                return _stateProvider.StateRoot;
-            }
+            get => _state.StateRoot;
             set
             {
-                _stateProvider.StateRoot = value;
+                // clean previous and get new
+                _state.Dispose();
+                _state = _factory.Get(value);
             }
         }
 
@@ -85,6 +84,7 @@ namespace Nethermind.State
         }
         public void Reset()
         {
+            _state.Reset();
             _stateProvider.Reset();
             _persistentStorageProvider.Reset();
             _transientStorageProvider.Reset();

@@ -184,7 +184,6 @@ namespace Nethermind.Evm.TransactionProcessing
                 Keccak stateRoot = null;
                 if (!spec.IsEip658Enabled)
                 {
-                    _worldState.RecalculateStateRoot();
                     stateRoot = _worldState.StateRoot;
                 }
 
@@ -214,7 +213,6 @@ namespace Nethermind.Evm.TransactionProcessing
                 Keccak? stateRoot = null;
                 if (!spec.IsEip658Enabled)
                 {
-                    _worldState.RecalculateStateRoot();
                     stateRoot = _worldState.StateRoot;
                 }
 

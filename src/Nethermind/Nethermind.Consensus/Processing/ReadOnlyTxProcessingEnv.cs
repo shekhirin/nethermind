@@ -43,13 +43,12 @@ namespace Nethermind.Consensus.Processing
             ILogManager? logManager)
         {
             if (specProvider is null) throw new ArgumentNullException(nameof(specProvider));
-            IStateFactory factory1 = factory;
 
             DbProvider = readOnlyDbProvider ?? throw new ArgumentNullException(nameof(readOnlyDbProvider));
             ReadOnlyDb codeDb = readOnlyDbProvider.CodeDb.AsReadOnly(true);
 
-            StateReader = new StateReader(factory1, codeDb, logManager);
-            StateProvider = new WorldState(factory1, codeDb, logManager);
+            StateReader = new StateReader(factory, codeDb, logManager);
+            StateProvider = new WorldState(factory, codeDb, logManager);
 
             BlockTree = readOnlyBlockTree ?? throw new ArgumentNullException(nameof(readOnlyBlockTree));
             BlockhashProvider = new BlockhashProvider(BlockTree, logManager);

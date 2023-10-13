@@ -8,6 +8,9 @@ using Nethermind.Trie;
 
 namespace Nethermind.State;
 
+/// <summary>
+/// The actual state accessor that is both: disposable when no longer needed and commitable with <see cref="Commit"/>.
+/// </summary>
 public interface IState : IDisposable
 {
     void Set(Address address, Account? account);
@@ -24,8 +27,18 @@ public interface IState : IDisposable
     /// Commits the changes.
     /// </summary>
     void Commit(long blockNumber);
+
+    /// <summary>
+    /// Resets all the changes.
+    /// </summary>
+    void Reset();
+
+    Keccak StateRoot { get; }
 }
 
+/// <summary>
+/// The factory allowing to get a state at the given keccak.
+/// </summary>
 public interface IStateFactory
 {
     IState Get(Keccak stateRoot);

@@ -23,7 +23,7 @@ namespace Nethermind.Consensus.Producers
     {
         protected readonly IDbProvider _dbProvider;
         protected readonly IBlockTree _blockTree;
-        protected readonly IReadOnlyTrieStore _readOnlyTrieStore;
+        protected readonly IStateFactory _stateFactory;
         protected readonly ISpecProvider _specProvider;
         protected readonly IBlockValidator _blockValidator;
         protected readonly IRewardCalculatorSource _rewardCalculatorSource;
@@ -39,7 +39,7 @@ namespace Nethermind.Consensus.Producers
         public BlockProducerEnvFactory(
             IDbProvider dbProvider,
             IBlockTree blockTree,
-            IReadOnlyTrieStore readOnlyTrieStore,
+            IStateFactory stateFactory,
             ISpecProvider specProvider,
             IBlockValidator blockValidator,
             IRewardCalculatorSource rewardCalculatorSource,
@@ -52,7 +52,7 @@ namespace Nethermind.Consensus.Producers
         {
             _dbProvider = dbProvider;
             _blockTree = blockTree;
-            _readOnlyTrieStore = readOnlyTrieStore;
+            _stateFactory = stateFactory;
             _specProvider = specProvider;
             _blockValidator = blockValidator;
             _rewardCalculatorSource = rewardCalculatorSource;
@@ -107,7 +107,7 @@ namespace Nethermind.Consensus.Producers
         }
 
         protected virtual ReadOnlyTxProcessingEnv CreateReadonlyTxProcessingEnv(ReadOnlyDbProvider readOnlyDbProvider, ReadOnlyBlockTree readOnlyBlockTree) =>
-            new(readOnlyDbProvider, _readOnlyTrieStore, readOnlyBlockTree, _specProvider, _logManager);
+            new(readOnlyDbProvider, _stateFactory, readOnlyBlockTree, _specProvider, _logManager);
 
         protected virtual ITxSource CreateTxSourceForProducer(
             ITxSource? additionalTxSource,

@@ -242,7 +242,6 @@ public partial class BlockProcessor : IBlockProcessor
         _receiptsTracer.EndBlockTrace();
 
         _stateProvider.Commit(spec);
-        _stateProvider.RecalculateStateRoot();
 
         block.Header.StateRoot = _stateProvider.StateRoot;
         block.Header.Hash = block.Header.CalculateHash();
