@@ -3,7 +3,7 @@
 
 FROM mcr.microsoft.com/dotnet/sdk:7.0-jammy AS build
 COPY . .
-RUN dotnet publish ./tools/SendBlobs/SendBlobs.csproj -c release -o out -p:BuildTimestamp=0
+RUN dotnet publish ./tools/SendBlobs/SendBlobs.csproj -c release -o out --sc true -r linux-x64 -p:BuildTimestamp=0
 
 
 FROM mcr.microsoft.com/dotnet/runtime:7.0
