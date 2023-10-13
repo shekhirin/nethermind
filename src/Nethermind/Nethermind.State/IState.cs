@@ -18,9 +18,9 @@ public interface IState : IDisposable
 
     Account? Get(Address address);
 
-    byte[] GetStorageAt(in StorageCell storageCell);
+    byte[] GetStorageAt(in StorageCell cell);
 
-    void SetStorage(in StorageCell storageCell, byte[] changeValue);
+    void SetStorage(in StorageCell cell, ReadOnlySpan<byte> value);
 
     void Accept(ITreeVisitor treeVisitor, VisitingOptions? visitingOptions = null);
 

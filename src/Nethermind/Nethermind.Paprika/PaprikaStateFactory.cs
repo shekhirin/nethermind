@@ -4,6 +4,7 @@
 using Nethermind.Core;
 using Nethermind.Core.Crypto;
 using Nethermind.Core.Extensions;
+using Nethermind.Int256;
 using Nethermind.State;
 using Nethermind.Trie;
 using Nethermind.Trie.Pruning;
@@ -12,6 +13,7 @@ using Paprika.Merkle;
 using Paprika.Store;
 using IWorldState = Paprika.Chain.IWorldState;
 using PaprikaKeccak = global::Paprika.Crypto.Keccak;
+using PaprikaAccount = global::Paprika.Account;
 
 namespace Nethermind.Paprika;
 
@@ -52,6 +54,34 @@ public class PaprikaStateFactory : IStateFactory
     private static Keccak Convert(PaprikaKeccak keccak) => new(keccak.BytesAsSpan);
     private static PaprikaKeccak Convert(Address address) => Convert(ValueKeccak.Compute(address.Bytes));
 
+    private const int CacheSize = 1024;
+    private static readonly byte[][] _cache = new byte[][CacheSize];
+
+    private static void GetKey(in UInt256 index, in Span<byte> key)
+    {
+        if (index < CacheSize)
+        {
+            _cache[(int)index].CopyTo(key);
+            return;
+        }
+
+        index.ToBigEndian(key);
+
+        // in situ calculation
+        KeccakHash.ComputeHashBytesToSpan(key, key);
+    }
+
+    static PaprikaStateFactory()
+    {
+        Span<byte> buffer = stackalloc byte[32];
+        for (int i = 0; i < CacheSize; i++)
+        {
+            UInt256 index = (UInt256)i;
+            index.ToBigEndian(buffer);
+            _cache[i] = Keccak.Compute(buffer).BytesToArray();
+        }
+    }
+
     class State : IState
     {
         private readonly IWorldState _wrapped;
@@ -63,22 +93,52 @@ public class PaprikaStateFactory : IStateFactory
 
         public void Set(Address address, Account? account)
         {
-            _wrapped.SetAccount(Convert(address), account);
+            PaprikaKeccak key = Convert(address);
+
+            if (account == null)
+            {
+                _wrapped.DestroyAccount(key);
+            }
+            else
+            {
+                PaprikaAccount actual = new(account.Balance, account.Nonce, Convert(account.CodeHash),
+                    Convert(account.StorageRoot));
+                _wrapped.SetAccount(key, actual);
+            }
         }
 
         public Account? Get(Address address)
         {
-            throw new NotImplementedException();
+            PaprikaAccount account = _wrapped.GetAccount(Convert(address));
+            bool hasEmptyStorageAndCode = account.CodeHash == PaprikaKeccak.OfAnEmptyString &&
+                                          account.StorageRootHash == PaprikaKeccak.EmptyTreeHash;
+            if (account.Balance.IsZero &&
+                account.Nonce.IsZero &&
+                hasEmptyStorageAndCode)
+                return null;
+
+            if (hasEmptyStorageAndCode)
+                return new Account(account.Nonce, account.Balance);
+
+            return new Account(account.Nonce, account.Balance, Convert(account.StorageRootHash),
+                Convert(account.CodeHash));
         }
 
-        public byte[] GetStorageAt(in StorageCell storageCell)
+        public byte[] GetStorageAt(in StorageCell cell)
         {
-            throw new NotImplementedException();
+            // bytes are used for two purposes, first for the key encoding and second, for the result handling
+            Span<byte> bytes = stackalloc byte[32];
+            GetKey(cell.Index, bytes);
+
+            return _wrapped.GetStorage(Convert(cell.Address), new PaprikaKeccak(bytes), bytes).ToArray();
         }
 
-        public void SetStorage(in StorageCell storageCell, byte[] changeValue)
+        public void SetStorage(in StorageCell cell, ReadOnlySpan<byte> value)
         {
-            throw new NotImplementedException();
+            Span<byte> key = stackalloc byte[32];
+            GetKey(cell.Index, key);
+
+            _wrapped.SetStorage(Convert(cell.Address), new PaprikaKeccak(key), value);
         }
 
         public void Accept(ITreeVisitor treeVisitor, VisitingOptions? visitingOptions = null)
