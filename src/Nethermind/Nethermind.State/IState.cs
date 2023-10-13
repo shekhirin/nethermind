@@ -5,6 +5,7 @@ using System;
 using Nethermind.Core;
 using Nethermind.Core.Crypto;
 using Nethermind.Trie;
+using Nethermind.Trie.Pruning;
 
 namespace Nethermind.State;
 
@@ -39,11 +40,13 @@ public interface IState : IDisposable
 /// <summary>
 /// The factory allowing to get a state at the given keccak.
 /// </summary>
-public interface IStateFactory
+public interface IStateFactory : IDisposable
 {
     IState Get(Keccak stateRoot);
 
     bool HasRoot(Keccak stateRoot);
+
+    event EventHandler<ReorgBoundaryReached>? ReorgBoundaryReached;
 }
 
 public interface IStateOwner

@@ -131,9 +131,9 @@ namespace Nethermind.Init.Steps
 
             IWorldState worldState = new WorldState(stateFactory, codeDb, getApi.LogManager);
 
-            TrieStoreBoundaryWatcher trieStoreBoundaryWatcher = new(trieStore, _api.BlockTree!, _api.LogManager);
+            TrieStoreBoundaryWatcher trieStoreBoundaryWatcher = new(stateFactory, _api.BlockTree!, _api.LogManager);
             getApi.DisposeStack.Push(trieStoreBoundaryWatcher);
-            getApi.DisposeStack.Push(trieStore);
+            getApi.DisposeStack.Push(stateFactory);
 
             ReadOnlyDbProvider readOnly = new(getApi.DbProvider, false);
 
