@@ -1,39 +1,13 @@
 # SPDX-FileCopyrightText: 2022 Demerzel Solutions Limited
 # SPDX-License-Identifier: LGPL-3.0-only
 
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:7.0-jammy AS build
-
-ARG TARGETPLATFORM
-ARG TARGETOS
-ARG TARGETARCH
-ARG BUILDPLATFORM
-ARG BUILD_CONFIG=release
-ARG BUILD_TIMESTAMP
-ARG COMMIT_HASH
-
+FROM mcr.microsoft.com/dotnet/sdk:7.0-jammy AS build
 COPY . .
-
-RUN if [ "$TARGETARCH" = "amd64" ]; \
-    then dotnet publish tools/SendBlobs -c $BUILD_CONFIG -r $TARGETOS-x64 -o out --sc \
-      -p:BuildTimestamp=$BUILD_TIMESTAMP -p:Commit=$COMMIT_HASH -p:Deterministic=true ; \
-    else dotnet publish tools/SendBlobs -c $BUILD_CONFIG -r $TARGETOS-$TARGETARCH -o out --sc \
-      -p:BuildTimestamp=$BUILD_TIMESTAMP -p:Commit=$COMMIT_HASH -p:Deterministic=true ; \
-    fi
+RUN dotnet publish ./tools/SendBlobs -c release --sc false -o out
 
 
-FROM --platform=$TARGETPLATFORM mcr.microsoft.com/dotnet/runtime:7.0
-
-ARG TARGETPLATFORM
-ARG TARGETOS
-ARG TARGETARCH
-ARG BUILDPLATFORM
-
+FROM mcr.microsoft.com/dotnet/runtime:7.0
 RUN apt-get update && apt-get -y install libsnappy-dev
-
 WORKDIR /nethermind
-
 COPY --from=build /out/SendBlobs .
-
-LABEL git_commit=$COMMIT_HASH
-
 ENTRYPOINT ["./SendBlobs"]
