@@ -19,7 +19,7 @@ public interface IState : IDisposable
 
     byte[] GetStorageAt(in StorageCell storageCell);
 
-    void SetStorage(in StorageCell changeStorageCell, byte[] changeValue);
+    void SetStorage(in StorageCell storageCell, byte[] changeValue);
 
     void Accept(ITreeVisitor treeVisitor, VisitingOptions? visitingOptions = null);
 
@@ -42,6 +42,8 @@ public interface IState : IDisposable
 public interface IStateFactory
 {
     IState Get(Keccak stateRoot);
+
+    bool HasRoot(Keccak stateRoot);
 }
 
 public interface IStateOwner

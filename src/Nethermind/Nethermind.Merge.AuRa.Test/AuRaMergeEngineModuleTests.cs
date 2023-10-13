@@ -110,7 +110,7 @@ public class AuRaMergeEngineModuleTests : EngineModuleTests
             {
                 BlockTree = BlockTree,
                 DbProvider = DbProvider,
-                ReadOnlyTrieStore = ReadOnlyTrieStore,
+                StateFactory = ReadOnlyTrieStore,
                 SpecProvider = SpecProvider,
                 TransactionComparerProvider = TransactionComparerProvider,
                 TxPool = TxPool

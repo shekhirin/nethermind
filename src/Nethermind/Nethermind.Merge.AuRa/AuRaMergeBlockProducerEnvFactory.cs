@@ -16,6 +16,7 @@ using Nethermind.Core.Specs;
 using Nethermind.Db;
 using Nethermind.Logging;
 using Nethermind.Merge.AuRa.Withdrawals;
+using Nethermind.State;
 using Nethermind.Trie.Pruning;
 using Nethermind.TxPool;
 
@@ -33,7 +34,7 @@ public class AuRaMergeBlockProducerEnvFactory : BlockProducerEnvFactory
         DisposableStack disposeStack,
         IDbProvider dbProvider,
         IBlockTree blockTree,
-        IReadOnlyTrieStore readOnlyTrieStore,
+        IStateFactory stateFactory,
         ISpecProvider specProvider,
         IBlockValidator blockValidator,
         IRewardCalculatorSource rewardCalculatorSource,
@@ -45,7 +46,7 @@ public class AuRaMergeBlockProducerEnvFactory : BlockProducerEnvFactory
         ILogManager logManager) : base(
             dbProvider,
             blockTree,
-            readOnlyTrieStore,
+            stateFactory,
             specProvider,
             blockValidator,
             rewardCalculatorSource,

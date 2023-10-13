@@ -10,9 +10,8 @@ using Nethermind.Core.Crypto;
 using Nethermind.Db;
 using Nethermind.Int256;
 using Nethermind.Logging;
+using Nethermind.State;
 using Nethermind.Synchronization.SnapSync;
-using Nethermind.Trie;
-using Nethermind.Trie.Pruning;
 
 namespace Nethermind.Synchronization.ParallelSync
 {
@@ -26,7 +25,7 @@ namespace Nethermind.Synchronization.ParallelSync
         private readonly IBlockTree _blockTree;
         private readonly IReceiptStorage _receiptStorage;
         private readonly IDb _stateDb;
-        private readonly ITrieNodeResolver _trieNodeResolver;
+        private readonly IStateFactory _stateFactory;
         private readonly ProgressTracker _progressTracker;
         private readonly ISyncConfig _syncConfig;
 
@@ -39,7 +38,7 @@ namespace Nethermind.Synchronization.ParallelSync
         public SyncProgressResolver(IBlockTree blockTree,
             IReceiptStorage receiptStorage,
             IDb stateDb,
-            ITrieNodeResolver trieNodeResolver,
+            IStateFactory stateFactory,
             ProgressTracker progressTracker,
             ISyncConfig syncConfig,
             ILogManager logManager)
@@ -48,7 +47,7 @@ namespace Nethermind.Synchronization.ParallelSync
             _blockTree = blockTree ?? throw new ArgumentNullException(nameof(blockTree));
             _receiptStorage = receiptStorage ?? throw new ArgumentNullException(nameof(receiptStorage));
             _stateDb = stateDb ?? throw new ArgumentNullException(nameof(stateDb));
-            _trieNodeResolver = trieNodeResolver ?? throw new ArgumentNullException(nameof(trieNodeResolver));
+            _stateFactory = stateFactory ?? throw new ArgumentNullException(nameof(stateFactory));
             _progressTracker = progressTracker ?? throw new ArgumentNullException(nameof(progressTracker));
             _syncConfig = syncConfig ?? throw new ArgumentNullException(nameof(syncConfig));
 
@@ -69,15 +68,7 @@ namespace Nethermind.Synchronization.ParallelSync
                 return true;
             }
 
-            TrieNode trieNode = _trieNodeResolver.FindCachedOrUnknown(stateRoot);
-            bool stateRootIsInMemory = trieNode.NodeType != NodeType.Unknown;
-            // We check whether one of below happened:
-            //   1) the block has been processed but not yet persisted (pruning) OR
-            //   2) the block has been persisted and removed from cache already OR
-            //   3) the full block state has been synced in the state nodes sync (fast sync)
-            // In 2) and 3) the state root will be saved in the database.
-            // In fast sync we never save the state root unless all the descendant nodes have been stored in the DB.
-            return stateRootIsInMemory || _stateDb.Get(stateRoot) is not null;
+            return _stateFactory.HasRoot(stateRoot);
         }
 
         public long FindBestFullState()

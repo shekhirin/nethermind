@@ -88,7 +88,7 @@ public class RegisterRpcModules : IStep
         if (_api.ReceiptStorage is null) throw new StepDependencyException(nameof(_api.ReceiptStorage));
         if (_api.GasPriceOracle is null) throw new StepDependencyException(nameof(_api.GasPriceOracle));
         if (_api.EthSyncingInfo is null) throw new StepDependencyException(nameof(_api.EthSyncingInfo));
-        if (_api.ReadOnlyTrieStore is null) throw new StepDependencyException(nameof(_api.ReadOnlyTrieStore));
+        if (_api.StateFactory is null) throw new StepDependencyException(nameof(_api.StateFactory));
 
 
         EthModuleFactory ethModuleFactory = new(
@@ -116,7 +116,7 @@ public class RegisterRpcModules : IStep
         if (_api.PeerPool is null) throw new StepDependencyException(nameof(_api.PeerPool));
         if (_api.WitnessRepository is null) throw new StepDependencyException(nameof(_api.WitnessRepository));
 
-        ProofModuleFactory proofModuleFactory = new(_api.DbProvider, _api.BlockTree, _api.ReadOnlyTrieStore, _api.BlockPreprocessor, _api.ReceiptFinder, _api.SpecProvider, _api.LogManager);
+        ProofModuleFactory proofModuleFactory = new(_api.DbProvider, _api.BlockTree, _api.StateFactory, _api.BlockPreprocessor, _api.ReceiptFinder, _api.SpecProvider, _api.LogManager);
         rpcModuleProvider.RegisterBounded(proofModuleFactory, 2, rpcConfig.Timeout);
 
         DebugModuleFactory debugModuleFactory = new(
@@ -128,7 +128,7 @@ public class RegisterRpcModules : IStep
             _api.RewardCalculatorSource,
             _api.ReceiptStorage,
             new ReceiptMigration(_api),
-            _api.ReadOnlyTrieStore,
+            _api.StateFactory,
             _api.ConfigProvider,
             _api.SpecProvider,
             _api.SyncModeSelector,
@@ -139,7 +139,7 @@ public class RegisterRpcModules : IStep
         TraceModuleFactory traceModuleFactory = new(
             _api.DbProvider,
             _api.BlockTree,
-            _api.ReadOnlyTrieStore,
+            _api.StateFactory,
             rpcConfig,
             _api.BlockPreprocessor,
             _api.RewardCalculatorSource,

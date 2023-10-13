@@ -92,7 +92,7 @@ public class MevPlugin : IConsensusWrapperPlugin
                 _tracerFactory = new TracerFactory(
                     getFromApi.DbProvider!,
                     getFromApi.BlockTree!,
-                    getFromApi.ReadOnlyTrieStore!,
+                    getFromApi.StateFactory!,
                     getFromApi.BlockPreprocessor!,
                     getFromApi.SpecProvider!,
                     getFromApi.LogManager!,

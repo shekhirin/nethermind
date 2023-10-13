@@ -109,7 +109,7 @@ public class InitializeNetwork : IStep
             _api.BlockTree,
             _api.ReceiptStorage!,
             _api.DbProvider.StateDb,
-            _api.ReadOnlyTrieStore!,
+            _api.StateFactory!,
             progressTracker,
             _syncConfig,
             _api.LogManager);
@@ -126,15 +126,16 @@ public class InitializeNetwork : IStep
         _api.PeerDifficultyRefreshPool = apiSyncPeerPool;
         _api.DisposeStack.Push(_api.SyncPeerPool);
 
-        if (_api.TrieStore is HealingTrieStore healingTrieStore)
-        {
-            healingTrieStore.InitializeNetwork(new GetNodeDataTrieNodeRecovery(apiSyncPeerPool, _api.LogManager));
-        }
-
-        if (_api.WorldState is HealingWorldState healingWorldState)
-        {
-            healingWorldState.InitializeNetwork(new SnapTrieNodeRecovery(apiSyncPeerPool, _api.LogManager));
-        }
+        // TODO: healing
+        // if (_api.TrieStore is HealingTrieStore healingTrieStore)
+        // {
+        //     healingTrieStore.InitializeNetwork(new GetNodeDataTrieNodeRecovery(apiSyncPeerPool, _api.LogManager));
+        // }
+        //
+        // if (_api.WorldState is HealingWorldState healingWorldState)
+        // {
+        //     healingWorldState.InitializeNetwork(new SnapTrieNodeRecovery(apiSyncPeerPool, _api.LogManager));
+        // }
 
         IEnumerable<ISynchronizationPlugin> synchronizationPlugins = _api.GetSynchronizationPlugins();
         foreach (ISynchronizationPlugin plugin in synchronizationPlugins)
@@ -184,7 +185,7 @@ public class InitializeNetwork : IStep
         _api.DisposeStack.Push(_api.Synchronizer);
 
         ISyncServer syncServer = _api.SyncServer = new SyncServer(
-            _api.TrieStore!.AsKeyValueStore(),
+            _api.StateFactory!,
             _api.DbProvider.CodeDb,
             _api.BlockTree,
             _api.ReceiptStorage!,

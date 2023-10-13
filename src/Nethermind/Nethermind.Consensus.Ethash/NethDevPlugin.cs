@@ -67,7 +67,7 @@ namespace Nethermind.Consensus.Ethash
 
             ReadOnlyTxProcessingEnv producerEnv = new(
                 readOnlyDbProvider,
-                getFromApi.ReadOnlyTrieStore,
+                getFromApi.StateFactory,
                 readOnlyBlockTree,
                 getFromApi.SpecProvider,
                 getFromApi.LogManager);

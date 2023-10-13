@@ -41,8 +41,7 @@ namespace Nethermind.State
 
         private IState _state;
 
-        public IState State { get => throw new NotImplementedException(""); }
-
+        public IState State => _state;
 
         public WorldState(IStateFactory factory, IKeyValueStore? codeDb, ILogManager? logManager)
         {
@@ -66,22 +65,27 @@ namespace Nethermind.State
         {
             return _persistentStorageProvider.GetOriginal(storageCell);
         }
+
         public byte[] Get(in StorageCell storageCell)
         {
             return _persistentStorageProvider.Get(storageCell);
         }
+
         public void Set(in StorageCell storageCell, byte[] newValue)
         {
             _persistentStorageProvider.Set(storageCell, newValue);
         }
+
         public byte[] GetTransientState(in StorageCell storageCell)
         {
             return _transientStorageProvider.Get(storageCell);
         }
+
         public void SetTransientState(in StorageCell storageCell, byte[] newValue)
         {
             _transientStorageProvider.Set(storageCell, newValue);
         }
+
         public void Reset()
         {
             _state.Reset();
@@ -100,34 +104,42 @@ namespace Nethermind.State
         {
             _stateProvider.DeleteAccount(address);
         }
+
         public void CreateAccount(Address address, in UInt256 balance, in UInt256 nonce = default)
         {
             _stateProvider.CreateAccount(address, balance, nonce);
         }
+
         public void InsertCode(Address address, ReadOnlyMemory<byte> code, IReleaseSpec spec, bool isGenesis = false)
         {
             _stateProvider.InsertCode(address, code, spec, isGenesis);
         }
+
         public void AddToBalance(Address address, in UInt256 balanceChange, IReleaseSpec spec)
         {
             _stateProvider.AddToBalance(address, balanceChange, spec);
         }
+
         public void AddToBalanceAndCreateIfNotExists(Address address, in UInt256 balanceChange, IReleaseSpec spec)
         {
             _stateProvider.AddToBalanceAndCreateIfNotExists(address, balanceChange, spec);
         }
+
         public void SubtractFromBalance(Address address, in UInt256 balanceChange, IReleaseSpec spec)
         {
             _stateProvider.SubtractFromBalance(address, balanceChange, spec);
         }
+
         public void UpdateStorageRoot(Address address, Keccak storageRoot)
         {
             _stateProvider.UpdateStorageRoot(address, storageRoot);
         }
+
         public void IncrementNonce(Address address)
         {
             _stateProvider.IncrementNonce(address);
         }
+
         public void DecrementNonce(Address address)
         {
             _stateProvider.DecrementNonce(address);
@@ -147,38 +159,47 @@ namespace Nethermind.State
         {
             return _stateProvider.GetNonce(address);
         }
+
         public UInt256 GetBalance(Address address)
         {
             return _stateProvider.GetBalance(address);
         }
+
         public Keccak GetStorageRoot(Address address)
         {
             return _stateProvider.GetStorageRoot(address);
         }
+
         public byte[] GetCode(Address address)
         {
             return _stateProvider.GetCode(address);
         }
+
         public byte[] GetCode(Keccak codeHash)
         {
             return _stateProvider.GetCode(codeHash);
         }
+
         public Keccak GetCodeHash(Address address)
         {
             return _stateProvider.GetCodeHash(address);
         }
+
         public void Accept(ITreeVisitor visitor, Keccak stateRoot, VisitingOptions? visitingOptions = null)
         {
             _stateProvider.Accept(visitor, stateRoot, visitingOptions);
         }
+
         public bool AccountExists(Address address)
         {
             return _stateProvider.AccountExists(address);
         }
+
         public bool IsDeadAccount(Address address)
         {
             return _stateProvider.IsDeadAccount(address);
         }
+
         public bool IsEmptyAccount(Address address)
         {
             return _stateProvider.IsEmptyAccount(address);
@@ -190,6 +211,7 @@ namespace Nethermind.State
             _transientStorageProvider.Commit();
             _stateProvider.Commit(releaseSpec, isGenesis);
         }
+
         public void Commit(IReleaseSpec releaseSpec, IWorldStateTracer tracer, bool isGenesis = false)
         {
             _persistentStorageProvider.Commit(tracer);

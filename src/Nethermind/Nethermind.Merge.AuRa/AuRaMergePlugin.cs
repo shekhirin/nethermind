@@ -52,7 +52,7 @@ namespace Nethermind.Merge.AuRa
                 _api.DisposeStack,
                 _api.DbProvider!,
                 _api.BlockTree!,
-                _api.ReadOnlyTrieStore!,
+                _api.StateFactory!,
                 _api.SpecProvider!,
                 _api.BlockValidator!,
                 _api.RewardCalculatorSource!,

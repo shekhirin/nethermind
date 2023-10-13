@@ -39,7 +39,7 @@ namespace Nethermind.Synchronization
         private readonly IReceiptFinder _receiptFinder;
         private readonly IBlockValidator _blockValidator;
         private readonly ISealValidator _sealValidator;
-        private readonly IReadOnlyKeyValueStore _stateDb;
+        private readonly IStateFactory _stateFactory;
         private readonly IReadOnlyKeyValueStore _codeDb;
         private readonly IWitnessRepository _witnessRepository;
         private readonly IGossipPolicy _gossipPolicy;
@@ -55,7 +55,7 @@ namespace Nethermind.Synchronization
         private BlockHeader? _pivotHeader;
 
         public SyncServer(
-            IReadOnlyKeyValueStore stateDb,
+            IStateFactory stateFactory,
             IReadOnlyKeyValueStore codeDb,
             IBlockTree blockTree,
             IReceiptFinder receiptFinder,
@@ -77,7 +77,7 @@ namespace Nethermind.Synchronization
             _pool = pool ?? throw new ArgumentNullException(nameof(pool));
             _syncModeSelector = syncModeSelector ?? throw new ArgumentNullException(nameof(syncModeSelector));
             _sealValidator = sealValidator ?? throw new ArgumentNullException(nameof(sealValidator));
-            _stateDb = stateDb ?? throw new ArgumentNullException(nameof(stateDb));
+            _stateFactory = stateFactory ?? throw new ArgumentNullException(nameof(stateFactory));
             _codeDb = codeDb ?? throw new ArgumentNullException(nameof(codeDb));
             _blockTree = blockTree ?? throw new ArgumentNullException(nameof(blockTree));
             _receiptFinder = receiptFinder ?? throw new ArgumentNullException(nameof(receiptFinder));
@@ -401,7 +401,9 @@ namespace Nethermind.Synchronization
                 values[i] = null;
                 if ((includedTypes & NodeDataType.State) == NodeDataType.State)
                 {
-                    values[i] = _stateDb[keys[i].Bytes];
+                    // TODO: Paprika
+                    throw new NotImplementedException("Paprika");
+                    //values[i] = _stateFactory[keys[i].Bytes];
                 }
 
                 if (values[i] is null && (includedTypes & NodeDataType.Code) == NodeDataType.Code)
@@ -478,6 +480,7 @@ namespace Nethermind.Synchronization
         }
 
         private readonly object _chtLock = new();
+
 
         // TODO - Cancellation token?
         // TODO - not a fan of this function name - CatchUpCHT, AddMissingCHTBlocks, ...?

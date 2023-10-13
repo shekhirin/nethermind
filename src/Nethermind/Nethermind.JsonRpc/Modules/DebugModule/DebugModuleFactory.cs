@@ -15,6 +15,7 @@ using Nethermind.Core.Specs;
 using Nethermind.Db;
 using Nethermind.Evm.TransactionProcessing;
 using Nethermind.Logging;
+using Nethermind.State;
 using Nethermind.Synchronization.ParallelSync;
 using Nethermind.Trie.Pruning;
 using Newtonsoft.Json;
@@ -28,7 +29,7 @@ public class DebugModuleFactory : ModuleFactoryBase<IDebugRpcModule>
     private readonly IRewardCalculatorSource _rewardCalculatorSource;
     private readonly IReceiptStorage _receiptStorage;
     private readonly IReceiptsMigration _receiptsMigration;
-    private readonly IReadOnlyTrieStore _trieStore;
+    private readonly IStateFactory _stateFactory;
     private readonly IConfigProvider _configProvider;
     private readonly ISpecProvider _specProvider;
     private readonly ILogManager _logManager;
@@ -48,7 +49,7 @@ public class DebugModuleFactory : ModuleFactoryBase<IDebugRpcModule>
         IRewardCalculatorSource rewardCalculator,
         IReceiptStorage receiptStorage,
         IReceiptsMigration receiptsMigration,
-        IReadOnlyTrieStore trieStore,
+        IStateFactory stateFactory,
         IConfigProvider configProvider,
         ISpecProvider specProvider,
         ISyncModeSelector syncModeSelector,
@@ -63,7 +64,7 @@ public class DebugModuleFactory : ModuleFactoryBase<IDebugRpcModule>
         _rewardCalculatorSource = rewardCalculator ?? throw new ArgumentNullException(nameof(rewardCalculator));
         _receiptStorage = receiptStorage ?? throw new ArgumentNullException(nameof(receiptStorage));
         _receiptsMigration = receiptsMigration ?? throw new ArgumentNullException(nameof(receiptsMigration));
-        _trieStore = (trieStore ?? throw new ArgumentNullException(nameof(trieStore)));
+        _stateFactory = (stateFactory ?? throw new ArgumentNullException(nameof(stateFactory)));
         _configProvider = configProvider ?? throw new ArgumentNullException(nameof(configProvider));
         _specProvider = specProvider ?? throw new ArgumentNullException(nameof(specProvider));
         _logManager = logManager ?? throw new ArgumentNullException(nameof(logManager));
@@ -76,7 +77,7 @@ public class DebugModuleFactory : ModuleFactoryBase<IDebugRpcModule>
     {
         ReadOnlyTxProcessingEnv txEnv = new(
             _dbProvider,
-            _trieStore,
+            _stateFactory,
             _blockTree,
             _specProvider,
             _logManager);

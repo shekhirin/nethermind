@@ -11,6 +11,7 @@ using Nethermind.Consensus.Validators;
 using Nethermind.Core.Specs;
 using Nethermind.Db;
 using Nethermind.Logging;
+using Nethermind.State;
 using Nethermind.Trie.Pruning;
 
 namespace Nethermind.Mev.Execution
@@ -23,12 +24,12 @@ namespace Nethermind.Mev.Execution
         private readonly ProcessingOptions _processingOptions;
         private readonly IReadOnlyBlockTree _blockTree;
         private readonly ReadOnlyDbProvider _dbProvider;
-        private readonly IReadOnlyTrieStore _trieStore;
+        private readonly IStateFactory _stateFactory;
 
         public TracerFactory(
             IDbProvider dbProvider,
             IBlockTree blockTree,
-            IReadOnlyTrieStore trieStore,
+            IStateFactory stateFactory,
             IBlockPreprocessorStep recoveryStep,
             ISpecProvider specProvider,
             ILogManager logManager,
@@ -40,13 +41,13 @@ namespace Nethermind.Mev.Execution
             _specProvider = specProvider ?? throw new ArgumentNullException(nameof(specProvider));
             _dbProvider = dbProvider.AsReadOnly(false);
             _blockTree = blockTree.AsReadOnly();
-            _trieStore = trieStore;
+            _stateFactory = stateFactory;
         }
 
         public ITracer Create()
         {
             ReadOnlyTxProcessingEnv txProcessingEnv = new(
-                _dbProvider, _trieStore, _blockTree, _specProvider, _logManager);
+                _dbProvider, _stateFactory, _blockTree, _specProvider, _logManager);
 
             ReadOnlyChainProcessingEnv chainProcessingEnv = new(
                 txProcessingEnv, Always.Valid, _recoveryStep, NoBlockRewards.Instance, new InMemoryReceiptStorage(), _dbProvider, _specProvider, _logManager);
