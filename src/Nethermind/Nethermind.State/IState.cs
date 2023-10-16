@@ -4,7 +4,6 @@
 using System;
 using Nethermind.Core;
 using Nethermind.Core.Crypto;
-using Nethermind.Trie;
 using Nethermind.Trie.Pruning;
 
 namespace Nethermind.State;
@@ -21,8 +20,6 @@ public interface IState : IDisposable
     byte[] GetStorageAt(in StorageCell cell);
 
     void SetStorage(in StorageCell cell, ReadOnlySpan<byte> value);
-
-    void Accept(ITreeVisitor treeVisitor, VisitingOptions? visitingOptions = null);
 
     /// <summary>
     /// Commits the changes.

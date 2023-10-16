@@ -15,7 +15,6 @@ using Nethermind.Logging;
 using Nethermind.State.Tracing;
 using Nethermind.State.Witnesses;
 using Nethermind.Trie;
-using Nethermind.Trie.Pruning;
 using Metrics = Nethermind.Db.Metrics;
 
 namespace Nethermind.State
@@ -54,8 +53,12 @@ namespace Nethermind.State
             if (visitor is null) throw new ArgumentNullException(nameof(visitor));
             if (stateRoot is null) throw new ArgumentNullException(nameof(stateRoot));
 
-            using IState state = _factory.Get(stateRoot);
-            state.Accept(visitor, visitingOptions);
+            if (visitor is RootCheckVisitor rootCheck)
+            {
+                rootCheck.HasRoot = _factory.HasRoot(stateRoot);
+            }
+
+            throw new NotImplementedException($"The type of visitor {visitor.GetType()} is not handled now");
         }
 
         public bool IsContract(Address address)

@@ -1,4 +1,4 @@
-﻿// SPDX-FileCopyrightText: 2023 Demerzel Solutions Limited
+// SPDX-FileCopyrightText: 2023 Demerzel Solutions Limited
 // SPDX-License-Identifier: LGPL-3.0-only
 
 using Nethermind.Core;
@@ -6,7 +6,6 @@ using Nethermind.Core.Crypto;
 using Nethermind.Core.Extensions;
 using Nethermind.Int256;
 using Nethermind.State;
-using Nethermind.Trie;
 using Nethermind.Trie.Pruning;
 using Paprika.Chain;
 using Paprika.Merkle;
@@ -52,7 +51,7 @@ public class PaprikaStateFactory : IStateFactory
 
     // shamelessly stolen from storage trees
     private const int CacheSize = 1024;
-    private static readonly byte[][] _cache = new byte[][CacheSize];
+    private static readonly byte[][] _cache = new byte[CacheSize][];
 
     private static void GetKey(in UInt256 index, in Span<byte> key)
     {
@@ -136,11 +135,6 @@ public class PaprikaStateFactory : IStateFactory
             GetKey(cell.Index, key);
 
             _wrapped.SetStorage(Convert(cell.Address), new PaprikaKeccak(key), value);
-        }
-
-        public void Accept(ITreeVisitor treeVisitor, VisitingOptions? visitingOptions = null)
-        {
-            throw new NotImplementedException();
         }
 
         public void Commit(long blockNumber) => _wrapped.Commit((uint)blockNumber);

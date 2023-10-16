@@ -34,8 +34,14 @@ namespace Nethermind.State
         {
             Metrics.StorageTreeReads++;
 
-            using IState state = _factory.Get(stateRoot);
+            using IState state = GetReadOnlyState(stateRoot);
             return state.GetStorageAt(new StorageCell(address, index));
+        }
+
+        private IState GetReadOnlyState(Keccak stateRoot)
+        {
+            // TODO: introduce readonly or refactor SpecificBlockChainProvider
+            return _factory.Get(stateRoot);
         }
 
         public UInt256 GetBalance(Keccak stateRoot, Address address)
@@ -55,8 +61,12 @@ namespace Nethermind.State
 
         public void RunTreeVisitor(ITreeVisitor treeVisitor, Keccak rootHash, VisitingOptions? visitingOptions = null)
         {
-            using IState state = _factory.Get(rootHash);
-            state.Accept(treeVisitor, visitingOptions);
+            if (treeVisitor is RootCheckVisitor rootCheck)
+            {
+                rootCheck.HasRoot = _factory.HasRoot(rootHash);
+            }
+
+            throw new NotImplementedException($"The type of visitor {treeVisitor.GetType()} is not handled now");
         }
 
         public byte[]? GetCode(Keccak stateRoot, Address address)
@@ -74,7 +84,7 @@ namespace Nethermind.State
 
             Metrics.StateTreeReads++;
 
-            using IState state = _factory.Get(stateRoot);
+            using IState state = GetReadOnlyState(stateRoot);
             return state.Get(address);
         }
     }
