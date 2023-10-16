@@ -14,6 +14,7 @@ using Nethermind.Db.Rocks.Config;
 using Nethermind.Db.Rpc;
 using Nethermind.JsonRpc.Client;
 using Nethermind.Logging;
+using Nethermind.Paprika;
 
 namespace Nethermind.Init.Steps
 {
@@ -83,6 +84,8 @@ namespace Nethermind.Init.Steps
                     _api.DbProvider = new DbProvider(DbModeHint.Persisted);
                     _api.RocksDbFactory = new RocksDbFactory(dbConfig, _api.LogManager, initConfig.BaseDbPath);
                     _api.MemDbFactory = new MemDbFactory();
+                    _api.StateFactory = new PaprikaStateFactory(Path.Combine(initConfig.BaseDbPath, "state"));
+                    _api.DisposeStack.Push(_api.StateFactory);
                     break;
             }
         }

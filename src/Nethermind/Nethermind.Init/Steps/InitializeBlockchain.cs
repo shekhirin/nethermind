@@ -102,8 +102,6 @@ namespace Nethermind.Init.Steps
             IKeyValueStore codeDb = getApi.DbProvider.CodeDb
                 .WitnessedBy(witnessCollector);
 
-            // TODO: implement state factory
-            IStateFactory stateFactory = null!;
 
             // TrieStore trieStore = syncConfig.TrieHealing
             //     ? new HealingTrieStore(
@@ -117,7 +115,7 @@ namespace Nethermind.Init.Steps
             //         persistenceStrategy,
             //         getApi.LogManager);
 
-            setApi.StateFactory = stateFactory;
+            IStateFactory stateFactory = setApi.StateFactory!;
 
             // IWorldState worldState = setApi.WorldState = syncConfig.TrieHealing
             //     ? new HealingWorldState(
@@ -133,7 +131,6 @@ namespace Nethermind.Init.Steps
 
             TrieStoreBoundaryWatcher trieStoreBoundaryWatcher = new(stateFactory, _api.BlockTree!, _api.LogManager);
             getApi.DisposeStack.Push(trieStoreBoundaryWatcher);
-            getApi.DisposeStack.Push(stateFactory);
 
             ReadOnlyDbProvider readOnly = new(getApi.DbProvider, false);
 
