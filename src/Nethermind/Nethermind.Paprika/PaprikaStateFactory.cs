@@ -12,8 +12,8 @@ using Paprika.Chain;
 using Paprika.Merkle;
 using Paprika.Store;
 using IWorldState = Paprika.Chain.IWorldState;
-using PaprikaKeccak = global::Paprika.Crypto.Keccak;
-using PaprikaAccount = global::Paprika.Account;
+using PaprikaKeccak = Paprika.Crypto.Keccak;
+using PaprikaAccount = Paprika.Account;
 
 namespace Nethermind.Paprika;
 
@@ -29,17 +29,13 @@ public class PaprikaStateFactory : IStateFactory
     {
         _db = PagedDb.MemoryMappedDb(_sepolia, 64, directory, true);
         _blockchain = new Blockchain(_db, new ComputeMerkleBehavior(true, 2, 2), _flushFileEvery);
+        _blockchain.Flushed += (_, blockNumber) =>
+            ReorgBoundaryReached?.Invoke(this, new ReorgBoundaryReached(blockNumber));
     }
 
-    public IState Get(Keccak stateRoot)
-    {
-        return new State(_blockchain.StartNew(Convert(stateRoot)));
-    }
+    public IState Get(Keccak stateRoot) => new State(_blockchain.StartNew(Convert(stateRoot)));
 
-    public bool HasRoot(Keccak stateRoot)
-    {
-        throw new NotImplementedException();
-    }
+    public bool HasRoot(Keccak stateRoot) => _blockchain.HasState(Convert(stateRoot));
 
     public event EventHandler<ReorgBoundaryReached>? ReorgBoundaryReached;
 
@@ -54,6 +50,7 @@ public class PaprikaStateFactory : IStateFactory
     private static Keccak Convert(PaprikaKeccak keccak) => new(keccak.BytesAsSpan);
     private static PaprikaKeccak Convert(Address address) => Convert(ValueKeccak.Compute(address.Bytes));
 
+    // shamelessly stolen from storage trees
     private const int CacheSize = 1024;
     private static readonly byte[][] _cache = new byte[][CacheSize];
 
@@ -148,16 +145,10 @@ public class PaprikaStateFactory : IStateFactory
 
         public void Commit(long blockNumber) => _wrapped.Commit((uint)blockNumber);
 
-        public void Reset()
-        {
-            throw new NotImplementedException();
-        }
+        public void Reset() => _wrapped.Reset();
 
-        public Keccak StateRoot { get; }
+        public Keccak StateRoot => Convert(_wrapped.Hash);
 
-        public void Dispose()
-        {
-            _wrapped.Dispose();
-        }
+        public void Dispose() => _wrapped.Dispose();
     }
 }
