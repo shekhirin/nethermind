@@ -24,24 +24,24 @@ namespace Nethermind.State
     public class WorldState : IWorldState, IStateOwner
     {
         private readonly IStateFactory _factory;
-        internal readonly StateProvider _stateProvider;
-        internal readonly PersistentStorageProvider _persistentStorageProvider;
+        private readonly StateProvider _stateProvider;
+        private readonly PersistentStorageProvider _persistentStorageProvider;
         private readonly TransientStorageProvider _transientStorageProvider;
 
         public Keccak StateRoot
         {
-            get => _state.StateRoot;
+            get => _state!.StateRoot;
             set
             {
                 // clean previous and get new
-                _state.Dispose();
+                _state?.Dispose();
                 _state = _factory.Get(value);
             }
         }
 
-        private IState _state;
+        private IState? _state;
 
-        public IState State => _state;
+        public IState State => _state!;
 
         public WorldState(IStateFactory factory, IKeyValueStore? codeDb, ILogManager? logManager)
         {

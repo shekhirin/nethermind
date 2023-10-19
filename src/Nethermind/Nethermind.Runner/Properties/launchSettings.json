@@ -107,7 +107,7 @@
     },
     "Sepolia": {
       "commandName": "Project",
-      "commandLineArgs": "-c sepolia -dd .data",
+      "commandLineArgs": "-c sepolia --JsonRpc.Enabled true --HealthChecks.Enabled true --HealthChecks.UIEnabled true --JsonRpc.JwtSecretFile=C:\\Users\\Szymon\\ethereum\\consensus\\prysm\\jwt.hex --baseDbPath C:\\Users\\Szymon\\ethereum\\execution",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
