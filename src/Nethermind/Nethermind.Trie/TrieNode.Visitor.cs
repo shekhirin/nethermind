@@ -370,7 +370,7 @@ namespace Nethermind.Trie
                             Account a = Rlp.Decode<Account>(node.Value.AsRlpStream());
                             visitor.VisitLeafAccount(keccak, a);
 
-                            if (a.HasStorage)
+                            if (a.HasStorage && visitor.VisitStorage)
                             {
                                 TrieNode storageRoot = resolver.FindCachedOrUnknown(a.StorageRoot);
                                 Visit(storageRoot, resolver, visitor, 0, new byte[ValueKeccak.MemorySize * 2],

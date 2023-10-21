@@ -34,5 +34,7 @@ namespace Nethermind.Trie
         void VisitLeafAccount(in ValueKeccak account, Account value);
 
         void VisitLeafStorage(in ValueKeccak account, in ValueKeccak storage, ReadOnlySpan<byte> value);
+
+        bool VisitStorage { get; }
     }
 }
