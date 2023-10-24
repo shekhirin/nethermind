@@ -558,7 +558,7 @@ class TreeLeafVisitorAdapter : IGenericTreeVisitor<TreeLeafContext>
         if (trieVisitContext.Account != null)
         {
             ValueKeccak account = trieVisitContext.Account!;
-            ValueKeccak storage = new(Nibbles.ToBytes(trieVisitContext.Nibbles));
+            ValueKeccak storage = new(Nibbles.ToBytes(Bytes.Concat(trieVisitContext.Nibbles, node.Key)));
 
             _baseVisitor.VisitLeafStorage(account, storage, node.Value);
         }
@@ -566,6 +566,7 @@ class TreeLeafVisitorAdapter : IGenericTreeVisitor<TreeLeafContext>
 
     public void VisitAccount(TrieNode node, TreeLeafContext trieVisitContext, Account account)
     {
-        _baseVisitor.VisitLeafAccount(node.Keccak, account);
+        ValueKeccak address = new(Nibbles.ToBytes(Bytes.Concat(trieVisitContext.Nibbles, node.Key)));
+        _baseVisitor.VisitLeafAccount(address, account);
     }
 }
