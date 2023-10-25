@@ -499,7 +499,8 @@ namespace Nethermind.Synchronization.Blocks
 
                 if (result.Length == 0)
                 {
-                    throw new EthSyncException("Empty receipts response received");
+                    break;
+                    //throw new EthSyncException("Empty receipts response received");
                 }
 
                 offset += result.Length;
