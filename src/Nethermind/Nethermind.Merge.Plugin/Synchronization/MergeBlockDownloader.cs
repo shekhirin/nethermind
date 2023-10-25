@@ -122,7 +122,7 @@ namespace Nethermind.Merge.Plugin.Synchronization
             }
 
             DownloaderOptions options = blocksRequest.Options;
-            bool downloadReceipts = (options & DownloaderOptions.WithReceipts) == DownloaderOptions.WithReceipts;
+            bool downloadReceipts = true; // (options & DownloaderOptions.WithReceipts) == DownloaderOptions.WithReceipts;
             bool shouldProcess = (options & DownloaderOptions.Process) == DownloaderOptions.Process;
             bool shouldMoveToMain = (options & DownloaderOptions.MoveToMain) == DownloaderOptions.MoveToMain;
 
