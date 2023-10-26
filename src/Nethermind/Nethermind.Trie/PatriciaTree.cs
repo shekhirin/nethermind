@@ -1138,7 +1138,7 @@ namespace Nethermind.Trie
             BatchedTrieVisitor<TreeLeafContext> batchedTrieVisitor = new(
                 visitorAdapter, resolver, new VisitingOptions()
                 {
-                    FullScanMemoryBudget = 32.GiB(),
+                    FullScanMemoryBudget = 8.GiB(),
                 }, 80);
             batchedTrieVisitor.Start(rootHash, new TreeLeafContext()
             {
