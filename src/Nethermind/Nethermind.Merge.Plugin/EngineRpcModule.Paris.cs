@@ -18,7 +18,7 @@ namespace Nethermind.Merge.Plugin;
 public partial class EngineRpcModule : IEngineRpcModule
 {
     private readonly IAsyncHandler<byte[], ExecutionPayload?> _getPayloadHandlerV1;
-    private readonly IAsyncHandler<ExecutionPayload, PayloadStatusV1> _newPayloadV1Handler;
+    private readonly IAsyncHandler<ExecutionPayload, PayloadStatusV1> _newPayloadHandler;
     private readonly IForkchoiceUpdatedHandler _forkchoiceUpdatedV1Handler;
     private readonly IHandler<TransitionConfigurationV1, TransitionConfigurationV1> _transitionConfigurationHandler;
     private readonly SemaphoreSlim _locker = new(1, 1);
@@ -86,7 +86,7 @@ public partial class EngineRpcModule : IEngineRpcModule
             try
             {
                 using IDisposable region = _gcKeeper.TryStartNoGCRegion();
-                return await _newPayloadV1Handler.HandleAsync(executionPayload);
+                return await _newPayloadHandler.HandleAsync(executionPayload);
             }
             catch (Exception exception)
             {

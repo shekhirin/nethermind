@@ -108,6 +108,11 @@ public class NewPayloadHandler : IAsyncHandler<ExecutionPayload, PayloadStatusV1
             if (_logger.IsInfo) _logger.Info($"Invalid - block {request} is known to be a part of an invalid chain. The last valid is {lastValidHash}");
             return NewPayloadV1Result.Invalid(lastValidHash, $"Block {request} is known to be a part of an invalid chain.");
         }
+        if (_invalidChainTracker.IsOnKnownInvalidChain(block.ParentHash!, out lastValidHash))
+        {
+            if (_logger.IsInfo) _logger.Info($"Invalid - parent of block {request} is known to be a part of an invalid chain. The last valid is {lastValidHash}");
+            return NewPayloadV1Result.Invalid(lastValidHash, $"Parent of block {request} is known to be a part of an invalid chain.");
+        }
 
         // Imagine that node was on block X and later node was offline.
         // Now user download new Nethermind release with sync pivot X+100 and start the node.

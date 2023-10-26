@@ -38,7 +38,7 @@ public partial class EngineRpcModule : IEngineRpcModule
         _getPayloadHandlerV1 = getPayloadHandlerV1;
         _getPayloadHandlerV2 = getPayloadHandlerV2;
         _getPayloadHandlerV3 = getPayloadHandlerV3;
-        _newPayloadV1Handler = newPayloadV1Handler;
+        _newPayloadHandler = newPayloadV1Handler;
         _forkchoiceUpdatedV1Handler = forkchoiceUpdatedV1Handler;
         _executionGetPayloadBodiesByHashV1Handler = executionGetPayloadBodiesByHashV1Handler;
         _executionGetPayloadBodiesByRangeV1Handler = executionGetPayloadBodiesByRangeV1Handler;
