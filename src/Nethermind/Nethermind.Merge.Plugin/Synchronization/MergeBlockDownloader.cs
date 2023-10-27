@@ -218,7 +218,9 @@ namespace Nethermind.Merge.Plugin.Synchronization
                     }
 
                     // can move this to block tree now?
-                    if (!_blockValidator.ValidateSuggestedBlock(currentBlock))
+                    BlockHeader? parentHeader = currentBlock.ParentHash is not null ? _blockTree.FindHeader(currentBlock.ParentHash) : null;
+
+                    if (!_blockValidator.ValidateSuggestedBlock(currentBlock) || (parentHeader is not null && !_blockValidator.Validate(currentBlock.Header, parentHeader)))
                     {
                         string message = $"{bestPeer} sent an invalid block {currentBlock.ToString(Block.Format.Short)}.";
                         if (_logger.IsWarn) _logger.Warn(message);
