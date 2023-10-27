@@ -17,6 +17,7 @@ using Nethermind.Db;
 using Nethermind.Int256;
 using Nethermind.Logging;
 using Nethermind.Merge.Plugin;
+using Nethermind.Merge.Plugin.InvalidChainTracker;
 using Nethermind.Merge.Plugin.Synchronization;
 using Nethermind.Merge.Plugin.Test;
 using Nethermind.Specs;
@@ -495,6 +496,7 @@ public partial class BlockDownloaderTests
                     BetterPeerStrategy,
                     ChainLevelHelper,
                     Substitute.For<ISyncProgressResolver>(),
+                    Substitute.For<IInvalidChainTracker>(),
                     LimboLogs.Instance);
             }
         }

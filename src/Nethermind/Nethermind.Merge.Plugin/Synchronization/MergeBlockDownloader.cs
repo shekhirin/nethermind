@@ -14,6 +14,7 @@ using Nethermind.Core;
 using Nethermind.Core.Specs;
 using Nethermind.Crypto;
 using Nethermind.Logging;
+using Nethermind.Merge.Plugin.InvalidChainTracker;
 using Nethermind.Synchronization;
 using Nethermind.Synchronization.Blocks;
 using Nethermind.Synchronization.ParallelSync;
@@ -35,6 +36,7 @@ namespace Nethermind.Merge.Plugin.Synchronization
         private readonly IChainLevelHelper _chainLevelHelper;
         private readonly IPoSSwitcher _poSSwitcher;
         private readonly ISyncProgressResolver _syncProgressResolver;
+        private readonly IInvalidChainTracker _invalidChainTracker;
 
         public MergeBlockDownloader(
             IPoSSwitcher posSwitcher,
@@ -50,6 +52,7 @@ namespace Nethermind.Merge.Plugin.Synchronization
             IBetterPeerStrategy betterPeerStrategy,
             IChainLevelHelper chainLevelHelper,
             ISyncProgressResolver syncProgressResolver,
+            IInvalidChainTracker invalidChainTracker,
             ILogManager logManager,
             SyncBatchSize? syncBatchSize = null)
             : base(feed, syncPeerPool, blockTree, blockValidator, sealValidator, syncReport, receiptStorage,
@@ -63,6 +66,7 @@ namespace Nethermind.Merge.Plugin.Synchronization
             _syncReport = syncReport ?? throw new ArgumentNullException(nameof(syncReport));
             _receiptStorage = receiptStorage ?? throw new ArgumentNullException(nameof(receiptStorage));
             _beaconPivot = beaconPivot;
+            _invalidChainTracker = invalidChainTracker ?? throw new ArgumentNullException(nameof(invalidChainTracker));
             _receiptsRecovery = new ReceiptsRecovery(new EthereumEcdsa(specProvider.ChainId, logManager), specProvider);
             _syncProgressResolver = syncProgressResolver ?? throw new ArgumentNullException(nameof(syncProgressResolver));
             _logger = logManager.GetClassLogger();
@@ -218,6 +222,7 @@ namespace Nethermind.Merge.Plugin.Synchronization
                     {
                         string message = $"{bestPeer} sent an invalid block {currentBlock.ToString(Block.Format.Short)}.";
                         if (_logger.IsWarn) _logger.Warn(message);
+                        _invalidChainTracker.OnInvalidBlock(currentBlock.Hash!, currentBlock.ParentHash);
                         throw new EthSyncException(message);
                     }
 
