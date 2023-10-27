@@ -256,8 +256,7 @@ namespace Nethermind.Merge.Plugin.Synchronization
                     }
 
                     bool isKnownBeaconBlock = _blockTree.IsKnownBeaconBlock(currentBlock.Number, currentBlock.GetOrCalculateHash());
-                    BlockTreeSuggestOptions suggestOptions =
-                        shouldProcess ? BlockTreeSuggestOptions.ShouldProcess : BlockTreeSuggestOptions.None;
+                    BlockTreeSuggestOptions suggestOptions = BlockTreeSuggestOptions.ShouldProcess;
                     if (_logger.IsTrace)
                         _logger.Trace(
                             $"Current block {currentBlock}, BeaconPivot: {_beaconPivot.PivotNumber}, IsKnownBeaconBlock: {isKnownBeaconBlock}");
