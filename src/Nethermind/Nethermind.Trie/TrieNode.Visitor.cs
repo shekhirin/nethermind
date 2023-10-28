@@ -59,7 +59,7 @@ namespace Nethermind.Trie
                                 TCtx? childCtx = visitor.ShouldVisitChild(this, trieVisitContext, child, i);
                                 if (childCtx != null)
                                 {
-                                    nextToVisit.Add((child, childCtx.Value, (byte)(currentLevel+1)));
+                                    nextToVisit.Add((child, childCtx.Value, (byte)(currentLevel + 1)));
                                 }
 
                                 if (child.IsPersisted)
@@ -84,7 +84,7 @@ namespace Nethermind.Trie
                         TCtx? childCtx = visitor.ShouldVisitExtension(this, trieVisitContext, child);
                         if (childCtx != null)
                         {
-                            nextToVisit.Add((child, childCtx.Value, (byte)(currentLevel+Key?.Length??0)));
+                            nextToVisit.Add((child, childCtx.Value, (byte)(currentLevel + Key?.Length ?? 0)));
                         }
 
                         break;
@@ -104,7 +104,8 @@ namespace Nethermind.Trie
 
                                 if (childCtx != null && TryResolveStorageRoot(nodeResolver, out TrieNode? storageRoot))
                                 {
-                                    nextToVisit.Add((storageRoot!, childCtx.Value, (byte)(currentLevel + Key?.Length??0)));
+                                    nextToVisit.Add((storageRoot!, childCtx.Value,
+                                        (byte)(currentLevel + Key?.Length ?? 0)));
                                 }
                                 else
                                 {
@@ -288,36 +289,40 @@ namespace Nethermind.Trie
             }
         }
 
-        internal void Accept(ITreeLeafVisitor visitor, ITrieNodeResolver nodeResolver, bool parallel)
+        public void Accept(ITreeLeafVisitor visitor, ITrieNodeResolver nodeResolver, bool skipStorage)
         {
-            if (parallel)
+            ResolveNode(nodeResolver, ReadFlags.HintCacheMiss);
+            if (NodeType != NodeType.Branch)
             {
-                ResolveNode(nodeResolver);
-                if (NodeType == NodeType.Branch)
-                {
-                    TrieNode?[] children = new TrieNode?[BranchesCount];
-                    for (byte i = 0; i < BranchesCount; i++)
-                    {
-                        children[i] = GetChild(nodeResolver, i);
-                    }
-
-                    Parallel.ForEach(children, (child, state, index) =>
-                    {
-                        byte[] nibbles = new byte[ValueKeccak.MemorySize * 2];
-                        nibbles[0] = (byte)index;
-                        Visit(child, nodeResolver, visitor, 1, nibbles, null);
-                    });
-
-                    return;
-                }
+                throw new Exception("Only branches as the root");
             }
 
-            byte[] address = new byte[ValueKeccak.MemorySize * 2];
-            Visit(this, nodeResolver, visitor, 0, address, null);
+            (TrieNode node, byte[] nibbles)[] children = new (TrieNode node, byte[] nibbles)[BranchesCount];
 
-            static void Visit(TrieNode node, ITrieNodeResolver resolver, ITreeLeafVisitor visitor, int depth, byte[] nibbles, Keccak? account)
+            for (byte i = 0; i < BranchesCount; i++)
             {
-                node.ResolveNode(resolver);
+                TrieNode? child = GetChild(nodeResolver, i);
+                if (child == null)
+                {
+                    throw new Exception("Root has a null child");
+                }
+
+                byte[] nibbles = new byte[ValueKeccak.MemorySize * 2];
+                nibbles[0] = i;
+                children[i] = (child, nibbles);
+            }
+
+            Parallel.ForEach(children, child =>
+            {
+                Visit(child.node, nodeResolver, visitor, 1, child.nibbles, null, skipStorage);
+            });
+
+            return;
+
+            static void Visit(TrieNode node, ITrieNodeResolver resolver, ITreeLeafVisitor visitor, int depth,
+                byte[] nibbles, Keccak? account, bool skipStorage)
+            {
+                node.ResolveNode(resolver, ReadFlags.HintCacheMiss);
 
                 Span<byte> path;
                 switch (node.NodeType)
@@ -329,18 +334,22 @@ namespace Nethermind.Trie
                             if (child != null)
                             {
                                 nibbles[depth] = i;
-                                Visit(child, resolver, visitor, depth + 1, nibbles, account);
+                                Visit(child, resolver, visitor, depth + 1, nibbles, account, skipStorage);
+
+                                // un resolve after visiting
+                                node.UnresolveChild(i);
                             }
                         }
+
                         break;
                     case NodeType.Extension:
                         TrieNode branch = node.GetChild(resolver, 0);
                         path = node.Key.AsSpan();
-                        path.CopyTo(nibbles.Slice(depth));
+                        path.CopyTo(nibbles.AsSpan(depth));
 
                         Debug.Assert(branch != null);
 
-                        Visit(branch, resolver, visitor, depth + path.Length, nibbles, account);
+                        Visit(branch, resolver, visitor, depth + path.Length, nibbles, account, skipStorage);
                         break;
                     case NodeType.Leaf:
                         path = node.Key.AsSpan();
@@ -350,7 +359,8 @@ namespace Nethermind.Trie
 
                         path.CopyTo(destination);
 
-                        ValueKeccak keccak = new(Nibbles.ToBytes(nibbles));
+                        ValueKeccak keccak = default;
+                        Nibbles.ToBytes(nibbles, keccak.BytesAsSpan);
 
                         if (account != null)
                         {
@@ -362,11 +372,11 @@ namespace Nethermind.Trie
                             Account a = Rlp.Decode<Account>(node.Value.AsRlpStream());
                             visitor.VisitLeafAccount(keccak, a);
 
-                            if (a.HasStorage)
+                            if (a.HasStorage && !skipStorage)
                             {
                                 TrieNode storageRoot = resolver.FindCachedOrUnknown(a.StorageRoot);
                                 Visit(storageRoot, resolver, visitor, 0, new byte[ValueKeccak.MemorySize * 2],
-                                    keccak.ToKeccak());
+                                    keccak.ToKeccak(), false);
                             }
                         }
 

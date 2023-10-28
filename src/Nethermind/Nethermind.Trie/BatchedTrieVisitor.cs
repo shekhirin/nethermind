@@ -129,7 +129,8 @@ public class BatchedTrieVisitor<TCtx> where TCtx : struct
         ValueKeccak root,
         TCtx rootContext,
         int degreeOfParallelism
-    ) {
+    )
+    {
         // Start with the root
         _partitions[CalculatePartitionIdx(root)].Push(new Job(root, rootContext, 0));
         _activeJobs = 1;
@@ -374,7 +375,7 @@ public class BatchedTrieVisitor<TCtx> where TCtx : struct
 /// A ITreeVisitor that allows passing and modifying a custom context struct.
 /// </summary>
 /// <typeparam name="TCtx"></typeparam>
-public interface IGenericTreeVisitor<TCtx> where TCtx: struct
+public interface IGenericTreeVisitor<TCtx> where TCtx : struct
 {
     TCtx? ShouldVisitExtension(TrieNode parent, TCtx parentCtx, TrieNode child);
     TCtx? ShouldVisitChild(TrieNode parent, TCtx parentCtx, TrieNode child, int childIdx);
@@ -419,7 +420,7 @@ public class ConventionalTreeVisitorAdapter : IGenericTreeVisitor<SmallTrieVisit
     {
         SmallTrieVisitContext newCtx = parentCtx;
         newCtx.Level++;
-        newCtx.BranchChildIndex=null;
+        newCtx.BranchChildIndex = null;
         return newCtx;
     }
 
@@ -427,7 +428,7 @@ public class ConventionalTreeVisitorAdapter : IGenericTreeVisitor<SmallTrieVisit
     {
         SmallTrieVisitContext newCtx = parentCtx;
         newCtx.Level++;
-        newCtx.BranchChildIndex=(byte?)childIdx;
+        newCtx.BranchChildIndex = (byte?)childIdx;
         return newCtx;
     }
 
@@ -522,7 +523,7 @@ class TreeLeafVisitorAdapter : IGenericTreeVisitor<TreeLeafContext>
         TreeLeafContext childCtx = parentCtx with
         {
             Nibbles = new byte[parentCtx.Depth + 1],
-            Depth = (byte)(parentCtx.Depth+1),
+            Depth = (byte)(parentCtx.Depth + 1),
         };
         parentCtx.Nibbles.CopyTo(childCtx.Nibbles.AsSpan());
         childCtx.Nibbles[parentCtx.Depth] = (byte)childIdx;
@@ -541,7 +542,8 @@ class TreeLeafVisitorAdapter : IGenericTreeVisitor<TreeLeafContext>
         Nibbles.ToBytes(allDepth, asBytes);
         Keccak keccak = new(asBytes);
 
-        return new TreeLeafContext() {
+        return new TreeLeafContext()
+        {
             Account = keccak,
             Nibbles = Array.Empty<byte>(),
             Depth = 0 // Reset depth
