@@ -175,7 +175,6 @@ public class OptimismPlugin : IConsensusPlugin, ISynchronizationPlugin, IInitial
             _mergeConfig,
             _invalidChainTracker,
             _api.ProcessExit!,
-            _api.ReadOnlyTrieStore!,
             _api.BetterPeerStrategy,
             _api.ChainSpec,
             _beaconSync,
