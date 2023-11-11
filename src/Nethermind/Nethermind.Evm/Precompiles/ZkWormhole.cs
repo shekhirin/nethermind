@@ -26,7 +26,14 @@ public class ZkWormhole : IPrecompile
 
     public bool VerifyProof(UInt256 nullifier, UInt256 value, Address sender, Hash256 stateRoot)
     {
-        return true;
+        byte[] nullifierEncoded = nullifier.ToLittleEndian();
+        byte[] valueEncoded = value.ToLittleEndian();
+        byte[] senderEncoded = sender.Bytes;
+        byte[] stateRootEncoded = stateRoot.BytesToArray();
+        return ZkVerifierFFI.Verify(nullifierEncoded, (UIntPtr)nullifierEncoded.Length,
+                                    valueEncoded, (UIntPtr)valueEncoded.Length,
+                                    senderEncoded, (UIntPtr)senderEncoded.Length,
+                                    stateRootEncoded, (UIntPtr)stateRootEncoded.Length);
     }
 
     public (ReadOnlyMemory<byte>, bool) Run(in ReadOnlyMemory<byte> inputData, IReleaseSpec releaseSpec)
