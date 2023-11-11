@@ -703,7 +703,7 @@ internal sealed class VirtualMachine<TLogger> : IVirtualMachine
                     _state.Set(cell, nullifier.ToLittleEndian());
                 }
 
-                bool success = zkWormhole.VerifyProof(nullifier, state.Env.Value, state.From, stateRoot);
+                bool success = zkWormhole.VerifyProof(Array.Empty<byte>(), nullifier, state.Env.Value, state.From, stateRoot);
                 CallResult callResult = new(Array.Empty<byte>(), success, !success);
                 return callResult;
             }

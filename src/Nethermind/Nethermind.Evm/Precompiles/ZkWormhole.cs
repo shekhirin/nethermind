@@ -24,13 +24,14 @@ public class ZkWormhole : IPrecompile
         return 0;
     }
 
-    public bool VerifyProof(UInt256 nullifier, UInt256 value, Address sender, Hash256 stateRoot)
+    public bool VerifyProof(byte[] proof, UInt256 nullifier, UInt256 value, Address sender, Hash256 stateRoot)
     {
         byte[] nullifierEncoded = nullifier.ToLittleEndian();
         byte[] valueEncoded = value.ToLittleEndian();
         byte[] senderEncoded = sender.Bytes;
         byte[] stateRootEncoded = stateRoot.BytesToArray();
-        return ZkVerifierFFI.Verify(nullifierEncoded, (UIntPtr)nullifierEncoded.Length,
+        return ZkVerifierFFI.Verify(proof, (UIntPtr)proof.Length,
+                                    nullifierEncoded, (UIntPtr)nullifierEncoded.Length,
                                     valueEncoded, (UIntPtr)valueEncoded.Length,
                                     senderEncoded, (UIntPtr)senderEncoded.Length,
                                     stateRootEncoded, (UIntPtr)stateRootEncoded.Length);

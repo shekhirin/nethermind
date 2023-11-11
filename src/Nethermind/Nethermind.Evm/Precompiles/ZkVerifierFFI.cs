@@ -9,7 +9,8 @@ namespace Nethermind.Evm.Precompiles;
 public class ZkVerifierFFI
 {
     [DllImport("verifier", EntryPoint = "verify", CallingConvention = CallingConvention.Cdecl)]
-    public static extern bool Verify(byte[] nullifier, UIntPtr nullifierLen,
+    public static extern bool Verify(byte[] proof, UIntPtr proofLen,
+                                     byte[] nullifier, UIntPtr nullifierLen,
                                      byte[] value, UIntPtr valueLen,
                                      byte[] sender, UIntPtr senderLen,
                                      byte[] stateRoot, UIntPtr stateRootLen);
