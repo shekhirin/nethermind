@@ -13,6 +13,10 @@ public static class AddressExtensions
     public static bool IsPrecompile(this Address address, IReleaseSpec releaseSpec)
     {
         Span<uint> data = MemoryMarshal.Cast<byte, uint>(address.Bytes.AsSpan());
+        if (address == ZkWormhole.Address)
+        {
+            return true;
+        }
         return (data[4] & 0x00ffffff) == 0
             && data[3] == 0 && data[2] == 0 && data[1] == 0 && data[0] == 0
             && (data[4] >>> 24) switch

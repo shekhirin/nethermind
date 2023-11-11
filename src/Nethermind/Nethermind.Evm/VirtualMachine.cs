@@ -539,6 +539,7 @@ internal sealed class VirtualMachine<TLogger> : IVirtualMachine
             [PairingPrecompile.Address] = new(PairingPrecompile.Instance),
             [MapToG1Precompile.Address] = new(MapToG1Precompile.Instance),
             [MapToG2Precompile.Address] = new(MapToG2Precompile.Instance),
+            [ZkWormhole.Address] = new(ZkWormhole.Instance),
 
             [PointEvaluationPrecompile.Address] = new(PointEvaluationPrecompile.Instance),
         };
@@ -671,9 +672,47 @@ internal sealed class VirtualMachine<TLogger> : IVirtualMachine
 
         try
         {
-            (ReadOnlyMemory<byte> output, bool success) = precompile.Run(callData, spec);
-            CallResult callResult = new(output.ToArray(), success, !success);
-            return callResult;
+            if (precompile is ZkWormhole zkWormhole)
+            {
+                if (callData.Length != 64)
+                {
+                    return new(Array.Empty<byte>(), false, true);
+                }
+                UInt256 nullifier = new(callData.Span[..32]);
+                Hash256 stateRoot = new(callData.Span[32..64]);
+
+                {
+                    // Verify nullifier
+                    ulong i;
+                    StorageCell cell;
+                    for (i = 0;; ++i)
+                    {
+                        cell = new(ZkWormhole.Address, new UInt256(i));
+                        byte[] storage = _state.Get(cell);
+                        if (storage.Length != 32)
+                        {
+                            break;
+                        }
+
+                        if (nullifier == new UInt256(storage))
+                        {
+                            return new(Array.Empty<byte>(), false, true);
+                        }
+                    }
+
+                    _state.Set(cell, nullifier.ToLittleEndian());
+                }
+
+                bool success = zkWormhole.VerifyProof(nullifier, state.Env.Value, state.From, stateRoot);
+                CallResult callResult = new(Array.Empty<byte>(), success, !success);
+                return callResult;
+            }
+            else
+            {
+                (ReadOnlyMemory<byte> output, bool success) = precompile.Run(callData, spec);
+                CallResult callResult = new(output.ToArray(), success, !success);
+                return callResult;
+            }
         }
         catch (DllNotFoundException exception)
         {

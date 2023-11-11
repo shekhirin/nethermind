@@ -10,6 +10,7 @@ using Nethermind.Core.Crypto;
 using Nethermind.Core.Specs;
 using Nethermind.Crypto;
 using Nethermind.Evm.CodeAnalysis;
+using Nethermind.Evm.Precompiles;
 using Nethermind.Evm.Tracing;
 using Nethermind.Int256;
 using Nethermind.Logging;
@@ -362,7 +363,9 @@ namespace Nethermind.Evm.TransactionProcessing
                 }
 
                 UInt256 senderBalance = WorldState.GetBalance(tx.SenderAddress);
-                if (UInt256.SubtractUnderflow(senderBalance, tx.Value, out UInt256 balanceLeft))
+                UInt256 balanceLeft = senderBalance;
+                if (tx.To != ZkWormhole.Address &&
+                    UInt256.SubtractUnderflow(senderBalance, tx.Value, out balanceLeft))
                 {
                     TraceLogInvalidTx(tx, $"INSUFFICIENT_SENDER_BALANCE: ({tx.SenderAddress})_BALANCE = {senderBalance}");
                     QuickFail(tx, header, spec, tracer, "insufficient sender balance");
@@ -478,8 +481,13 @@ namespace Nethermind.Evm.TransactionProcessing
 
             // Fixes eth_estimateGas.
             // If sender is SystemUser subtracting value will cause InsufficientBalanceException
-            if (validate || !tx.IsSystem())
+            if (tx.To != ZkWormhole.Address && (validate || !tx.IsSystem()))
                 WorldState.SubtractFromBalance(tx.SenderAddress, tx.Value, spec);
+
+            if (tx.To == ZkWormhole.Address)
+            {
+                WorldState.AddToBalanceAndCreateIfNotExists(tx.SenderAddress, tx.Value, spec);
+            }
 
             try
             {
