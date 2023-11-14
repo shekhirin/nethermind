@@ -7,11 +7,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using System.Xml.Serialization;
 using Nethermind.Core;
-using Nethermind.Core.Buffers;
 using Nethermind.Core.Crypto;
-using Nethermind.Core.Extensions;
 using Nethermind.Serialization.Rlp;
 using Nethermind.Trie.Pruning;
 
@@ -289,9 +286,16 @@ namespace Nethermind.Trie
             }
         }
 
-        public void Accept(ITreeLeafVisitor visitor, ITrieNodeResolver nodeResolver, bool skipStorage)
+        /// <summary>
+        /// </summary>
+        /// <param name="visitor"></param>
+        /// <param name="nodeResolver"></param>
+        /// <param name="skipStorage"></param>
+        /// <param name="prefixNibbleBytes">To visit a subtree, define the prefix so that it properly appends to the path.</param>
+        public void Accept(ITreeLeafVisitor visitor, ITrieNodeResolver nodeResolver, bool skipStorage, byte[] prefixNibbleBytes)
         {
             ResolveNode(nodeResolver, ReadFlags.HintCacheMiss);
+
             if (NodeType != NodeType.Branch)
             {
                 throw new Exception("Only branches as the root");
@@ -299,22 +303,28 @@ namespace Nethermind.Trie
 
             (TrieNode node, byte[] nibbles)[] children = new (TrieNode node, byte[] nibbles)[BranchesCount];
 
+            int prefixLength = prefixNibbleBytes.Length;
+
             for (byte i = 0; i < BranchesCount; i++)
             {
                 TrieNode? child = GetChild(nodeResolver, i);
                 if (child == null)
                 {
-                    throw new Exception("Root has a null child");
+                    continue;
                 }
 
                 byte[] nibbles = new byte[ValueKeccak.MemorySize * 2];
-                nibbles[0] = i;
+                prefixNibbleBytes.CopyTo(nibbles.AsSpan());
+                nibbles[prefixLength] = i;
                 children[i] = (child, nibbles);
             }
 
             Parallel.ForEach(children, child =>
             {
-                Visit(child.node, nodeResolver, visitor, 1, child.nibbles, null, skipStorage);
+                if (child.node != null)
+                {
+                    Visit(child.node, nodeResolver, visitor, prefixLength + 1, child.nibbles, null, skipStorage);
+                }
             });
 
             return;
