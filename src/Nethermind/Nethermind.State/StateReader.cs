@@ -34,15 +34,11 @@ namespace Nethermind.State
         {
             Metrics.StorageTreeReads++;
 
-            using IState state = GetReadOnlyState(stateRoot);
+            using IReadOnlyState state = GetReadOnlyState(stateRoot);
             return state.GetStorageAt(new StorageCell(address, index));
         }
 
-        private IState GetReadOnlyState(Keccak stateRoot)
-        {
-            // TODO: introduce readonly or refactor SpecificBlockChainProvider
-            return _factory.Get(stateRoot);
-        }
+        private IReadOnlyState GetReadOnlyState(Keccak stateRoot) => _factory.GetReadOnly(stateRoot);
 
         public UInt256 GetBalance(Keccak stateRoot, Address address)
         {
@@ -84,7 +80,7 @@ namespace Nethermind.State
 
             Metrics.StateTreeReads++;
 
-            using IState state = GetReadOnlyState(stateRoot);
+            using IReadOnlyState state = GetReadOnlyState(stateRoot);
             return state.Get(address);
         }
     }

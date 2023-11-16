@@ -34,6 +34,9 @@ public class PaprikaStateFactory : IStateFactory
 
     public IState Get(Keccak stateRoot) => new State(_blockchain.StartNew(Convert(stateRoot)));
 
+    public IReadOnlyState GetReadOnly(Keccak stateRoot) =>
+        new ReadOnlyState(_blockchain.StartReadOnly(Convert(stateRoot)));
+
     public bool HasRoot(Keccak stateRoot) => _blockchain.HasState(Convert(stateRoot));
 
     public event EventHandler<ReorgBoundaryReached>? ReorgBoundaryReached;
@@ -76,6 +79,46 @@ public class PaprikaStateFactory : IStateFactory
             index.ToBigEndian(buffer);
             _cache[i] = Keccak.Compute(buffer).BytesToArray();
         }
+    }
+
+    class ReadOnlyState : IReadOnlyState
+    {
+        private readonly IReadOnlyWorldState _wrapped;
+
+        public ReadOnlyState(IReadOnlyWorldState wrapped)
+        {
+            _wrapped = wrapped;
+        }
+
+        public Account? Get(Address address)
+        {
+            PaprikaAccount account = _wrapped.GetAccount(Convert(address));
+            bool hasEmptyStorageAndCode = account.CodeHash == PaprikaKeccak.OfAnEmptyString &&
+                                          account.StorageRootHash == PaprikaKeccak.EmptyTreeHash;
+            if (account.Balance.IsZero &&
+                account.Nonce.IsZero &&
+                hasEmptyStorageAndCode)
+                return null;
+
+            if (hasEmptyStorageAndCode)
+                return new Account(account.Nonce, account.Balance);
+
+            return new Account(account.Nonce, account.Balance, Convert(account.StorageRootHash),
+                Convert(account.CodeHash));
+        }
+
+        public byte[] GetStorageAt(in StorageCell cell)
+        {
+            // bytes are used for two purposes, first for the key encoding and second, for the result handling
+            Span<byte> bytes = stackalloc byte[32];
+            GetKey(cell.Index, bytes);
+
+            return _wrapped.GetStorage(Convert(cell.Address), new PaprikaKeccak(bytes), bytes).ToArray();
+        }
+
+        public Keccak StateRoot => Convert(_wrapped.Hash);
+
+        public void Dispose() => _wrapped.Dispose();
     }
 
     class State : IState
