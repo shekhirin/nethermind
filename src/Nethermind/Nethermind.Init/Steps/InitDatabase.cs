@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Nethermind.Api;
 using Nethermind.Blockchain.Synchronization;
+using Nethermind.Core;
 using Nethermind.Db;
 using Nethermind.Db.Rocks;
 using Nethermind.Db.Rocks.Config;
@@ -84,8 +85,17 @@ namespace Nethermind.Init.Steps
                     _api.DbProvider = new DbProvider(DbModeHint.Persisted);
                     _api.RocksDbFactory = new RocksDbFactory(dbConfig, _api.LogManager, initConfig.BaseDbPath);
                     _api.MemDbFactory = new MemDbFactory();
-                    _api.StateFactory = new PaprikaStateFactory(Path.Combine(initConfig.BaseDbPath, "state"));
-                    _api.DisposeStack.Push(_api.StateFactory);
+                    PaprikaStateFactory paprika = new(Path.Combine(initConfig.BaseDbPath, "state"));
+                    _api.RegisterForBlockFinalized((_, e)=>
+                    {
+                        foreach (BlockHeader finalized in e.FinalizedBlocks)
+                        {
+                            paprika.Finalize(finalized.StateRoot!);
+                        }
+                    });
+                    _api.DisposeStack.Push(paprika);
+
+                    _api.StateFactory = paprika;
                     break;
             }
         }

@@ -81,6 +81,8 @@ public class PaprikaStateFactory : IStateFactory
         }
     }
 
+    public void Finalize(Keccak finalizedStateRoot) => _blockchain.Finalize(Convert(finalizedStateRoot));
+
     class ReadOnlyState : IReadOnlyState
     {
         private readonly IReadOnlyWorldState _wrapped;

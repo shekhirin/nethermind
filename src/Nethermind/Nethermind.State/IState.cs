@@ -11,13 +11,9 @@ namespace Nethermind.State;
 /// <summary>
 /// The actual state accessor that is both: disposable when no longer needed and commitable with <see cref="Commit"/>.
 /// </summary>
-public interface IState : IDisposable
+public interface IState : IReadOnlyState
 {
     void Set(Address address, Account? account);
-
-    Account? Get(Address address);
-
-    byte[] GetStorageAt(in StorageCell cell);
 
     void SetStorage(in StorageCell cell, ReadOnlySpan<byte> value);
 
@@ -30,8 +26,6 @@ public interface IState : IDisposable
     /// Resets all the changes.
     /// </summary>
     void Reset();
-
-    Keccak StateRoot { get; }
 }
 
 public interface IReadOnlyState : IDisposable

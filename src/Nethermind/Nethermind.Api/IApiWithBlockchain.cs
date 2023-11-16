@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #nullable enable
+using System;
 using Nethermind.Blockchain;
 using Nethermind.Blockchain.Filters;
 using Nethermind.Blockchain.FullPruning;
@@ -81,6 +82,11 @@ namespace Nethermind.Api
         /// Currently supported in <see cref="SealEngineType.AuRa"/> and Eth2Merge.
         /// </remarks>
         IBlockFinalizationManager? FinalizationManager { get; set; }
+
+        /// <summary>
+        /// Registers a handler for future <see cref="IBlockFinalizationManager.BlocksFinalized"/> event.
+        /// </summary>
+        void RegisterForBlockFinalized(EventHandler<FinalizeEventArgs> blocksFinalizedHandler);
 
         IGasLimitCalculator? GasLimitCalculator { get; set; }
 
