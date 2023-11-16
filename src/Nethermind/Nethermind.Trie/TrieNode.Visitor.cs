@@ -119,7 +119,7 @@ namespace Nethermind.Trie
             }
         }
 
-        internal void Accept(ITreeVisitor visitor, ITrieNodeResolver nodeResolver, TrieVisitContext trieVisitContext)
+        public void Accept(ITreeVisitor visitor, ITrieNodeResolver nodeResolver, TrieVisitContext trieVisitContext)
         {
             try
             {
@@ -294,7 +294,17 @@ namespace Nethermind.Trie
         /// <param name="prefixNibbleBytes">To visit a subtree, define the prefix so that it properly appends to the path.</param>
         public void Accept(ITreeLeafVisitor visitor, ITrieNodeResolver nodeResolver, bool skipStorage, byte[] prefixNibbleBytes)
         {
+            int prefixLength = prefixNibbleBytes.Length;
+
             ResolveNode(nodeResolver, ReadFlags.HintCacheMiss);
+
+            if (NodeType == NodeType.Leaf)
+            {
+                byte[] nibbles = new byte[ValueKeccak.MemorySize * 2];
+                prefixNibbleBytes.CopyTo(nibbles.AsSpan());
+                Visit(this, nodeResolver, visitor, prefixLength, nibbles, null, skipStorage);
+                return;
+            }
 
             if (NodeType != NodeType.Branch)
             {
@@ -302,8 +312,6 @@ namespace Nethermind.Trie
             }
 
             (TrieNode node, byte[] nibbles)[] children = new (TrieNode node, byte[] nibbles)[BranchesCount];
-
-            int prefixLength = prefixNibbleBytes.Length;
 
             for (byte i = 0; i < BranchesCount; i++)
             {

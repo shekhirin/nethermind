@@ -14,7 +14,7 @@ namespace Nethermind.Trie
         private int _visitedNodes;
 
         public int Level { get; internal set; }
-        public bool IsStorage { get; internal set; }
+        public bool IsStorage { get; set; }
         public int? BranchChildIndex { get; internal set; }
         public bool ExpectAccounts { get; init; }
         public int VisitedNodes => _visitedNodes;
@@ -22,7 +22,7 @@ namespace Nethermind.Trie
         public int MaxDegreeOfParallelism
         {
             get => _maxDegreeOfParallelism;
-            internal init => _maxDegreeOfParallelism = VisitingOptions.AdjustMaxDegreeOfParallelism(value);
+            init => _maxDegreeOfParallelism = VisitingOptions.AdjustMaxDegreeOfParallelism(value);
         }
 
         public SemaphoreSlim Semaphore
