@@ -7,7 +7,6 @@ using FluentAssertions;
 using Nethermind.Blockchain;
 using Nethermind.Core.Crypto;
 using Nethermind.Core.Test.Builders;
-using Nethermind.Db;
 using Nethermind.Logging;
 using Nethermind.State.Snap;
 using Nethermind.Synchronization.SnapSync;
@@ -22,7 +21,7 @@ public class ProgressTrackerTests
     public async Task Did_not_have_race_issue()
     {
         BlockTree blockTree = Build.A.BlockTree().WithBlocks(Build.A.Block.TestObject).TestObject;
-        ProgressTracker progressTracker = new(blockTree, new MemDb(), LimboLogs.Instance);
+        ProgressTracker progressTracker = new(blockTree, LimboLogs.Instance);
         progressTracker.EnqueueStorageRange(new StorageRange()
         {
             Accounts = Array.Empty<PathWithAccount>(),
@@ -55,7 +54,7 @@ public class ProgressTrackerTests
     public void Will_create_multiple_get_address_range_request()
     {
         BlockTree blockTree = Build.A.BlockTree().WithBlocks(Build.A.Block.TestObject).TestObject;
-        ProgressTracker progressTracker = new ProgressTracker(blockTree, new MemDb(), LimboLogs.Instance, 4);
+        ProgressTracker progressTracker = new ProgressTracker(blockTree, LimboLogs.Instance, 4);
 
         (SnapSyncBatch request, bool finished) = progressTracker.GetNextRequest();
         request.AccountRangeRequest.Should().NotBeNull();
@@ -90,7 +89,7 @@ public class ProgressTrackerTests
     public void Will_deque_code_request_if_high_even_if_storage_queue_is_not_empty()
     {
         BlockTree blockTree = Build.A.BlockTree().WithBlocks(Build.A.Block.TestObject).TestObject;
-        ProgressTracker progressTracker = new ProgressTracker(blockTree, new MemDb(), LimboLogs.Instance);
+        ProgressTracker progressTracker = new ProgressTracker(blockTree, LimboLogs.Instance);
 
         for (int i = 0; i < ProgressTracker.HIGH_STORAGE_QUEUE_SIZE - 1; i++)
         {
@@ -115,7 +114,7 @@ public class ProgressTrackerTests
     public void Will_deque_storage_request_if_high()
     {
         BlockTree blockTree = Build.A.BlockTree().WithBlocks(Build.A.Block.TestObject).TestObject;
-        ProgressTracker progressTracker = new ProgressTracker(blockTree, new MemDb(), LimboLogs.Instance);
+        ProgressTracker progressTracker = new ProgressTracker(blockTree, LimboLogs.Instance);
 
         for (int i = 0; i < ProgressTracker.HIGH_STORAGE_QUEUE_SIZE; i++)
         {

@@ -32,7 +32,7 @@ namespace Nethermind.Synchronization.Test
             {
                 PivotNumber = "1",
             };
-            ProgressTracker progressTracker = new(blockTree, stateDb, LimboLogs.Instance);
+            ProgressTracker progressTracker = new(blockTree, LimboLogs.Instance);
 
             SyncProgressResolver syncProgressResolver = new(blockTree, receiptStorage, stateDb, NullTrieNodeResolver.Instance, progressTracker, syncConfig, LimboLogs.Instance);
             blockTree.BestSuggestedHeader.ReturnsNull();
@@ -49,7 +49,7 @@ namespace Nethermind.Synchronization.Test
             {
                 PivotNumber = "1",
             };
-            ProgressTracker progressTracker = new(blockTree, stateDb, LimboLogs.Instance);
+            ProgressTracker progressTracker = new(blockTree, LimboLogs.Instance);
 
             SyncProgressResolver syncProgressResolver = new(blockTree, receiptStorage, stateDb, NullTrieNodeResolver.Instance, progressTracker, syncConfig, LimboLogs.Instance);
             blockTree.BestSuggestedBody.ReturnsNull();
@@ -66,7 +66,7 @@ namespace Nethermind.Synchronization.Test
             {
                 PivotNumber = "1",
             };
-            ProgressTracker progressTracker = new(blockTree, stateDb, LimboLogs.Instance);
+            ProgressTracker progressTracker = new(blockTree, LimboLogs.Instance);
 
             SyncProgressResolver syncProgressResolver = new(blockTree, receiptStorage, stateDb, NullTrieNodeResolver.Instance, progressTracker, syncConfig, LimboLogs.Instance);
             Block head = Build.A.Block.WithHeader(Build.A.BlockHeader.WithNumber(5).WithStateRoot(TestItem.KeccakA).TestObject).TestObject;
@@ -86,7 +86,7 @@ namespace Nethermind.Synchronization.Test
             {
                 PivotNumber = "1",
             };
-            ProgressTracker progressTracker = new(blockTree, stateDb, LimboLogs.Instance);
+            ProgressTracker progressTracker = new(blockTree, LimboLogs.Instance);
 
             SyncProgressResolver syncProgressResolver = new(blockTree, receiptStorage, stateDb, NullTrieNodeResolver.Instance, progressTracker, syncConfig, LimboLogs.Instance);
             Block head = Build.A.Block.WithHeader(Build.A.BlockHeader.WithNumber(5).WithStateRoot(TestItem.KeccakA).TestObject).TestObject;
@@ -110,7 +110,7 @@ namespace Nethermind.Synchronization.Test
             {
                 PivotNumber = "1",
             };
-            ProgressTracker progressTracker = new(blockTree, stateDb, LimboLogs.Instance);
+            ProgressTracker progressTracker = new(blockTree, LimboLogs.Instance);
 
             SyncProgressResolver syncProgressResolver = new(blockTree, receiptStorage, stateDb, NullTrieNodeResolver.Instance, progressTracker, syncConfig, LimboLogs.Instance);
             Block head = Build.A.Block.WithHeader(Build.A.BlockHeader.WithNumber(5).WithStateRoot(TestItem.KeccakA).TestObject).TestObject;
@@ -134,7 +134,7 @@ namespace Nethermind.Synchronization.Test
                 FastBlocks = false,
                 PivotNumber = "1",
             };
-            ProgressTracker progressTracker = new(blockTree, stateDb, LimboLogs.Instance);
+            ProgressTracker progressTracker = new(blockTree, LimboLogs.Instance);
 
             SyncProgressResolver syncProgressResolver = new(blockTree, receiptStorage, stateDb, NullTrieNodeResolver.Instance, progressTracker, syncConfig, LimboLogs.Instance);
             Assert.True(syncProgressResolver.IsFastBlocksHeadersFinished());
@@ -156,7 +156,7 @@ namespace Nethermind.Synchronization.Test
                 DownloadReceiptsInFastSync = true,
                 PivotNumber = "1",
             };
-            ProgressTracker progressTracker = new(blockTree, stateDb, LimboLogs.Instance);
+            ProgressTracker progressTracker = new(blockTree, LimboLogs.Instance);
 
             blockTree.LowestInsertedHeader.Returns(Build.A.BlockHeader.WithNumber(2).WithStateRoot(TestItem.KeccakA).TestObject);
 
@@ -178,7 +178,7 @@ namespace Nethermind.Synchronization.Test
                 DownloadReceiptsInFastSync = true,
                 PivotNumber = "1",
             };
-            ProgressTracker progressTracker = new(blockTree, stateDb, LimboLogs.Instance);
+            ProgressTracker progressTracker = new(blockTree, LimboLogs.Instance);
 
             blockTree.LowestInsertedHeader.Returns(Build.A.BlockHeader.WithNumber(1).WithStateRoot(TestItem.KeccakA).TestObject);
             blockTree.LowestInsertedBodyNumber.Returns(2);
@@ -201,7 +201,7 @@ namespace Nethermind.Synchronization.Test
                 DownloadReceiptsInFastSync = true,
                 PivotNumber = "1",
             };
-            ProgressTracker progressTracker = new(blockTree, stateDb, LimboLogs.Instance);
+            ProgressTracker progressTracker = new(blockTree, LimboLogs.Instance);
 
             blockTree.LowestInsertedHeader.Returns(Build.A.BlockHeader.WithNumber(1).WithStateRoot(TestItem.KeccakA).TestObject);
             blockTree.LowestInsertedBodyNumber.Returns(1);
@@ -225,7 +225,7 @@ namespace Nethermind.Synchronization.Test
                 DownloadReceiptsInFastSync = true,
                 PivotNumber = "1",
             };
-            ProgressTracker progressTracker = new(blockTree, stateDb, LimboLogs.Instance);
+            ProgressTracker progressTracker = new(blockTree, LimboLogs.Instance);
 
             blockTree.LowestInsertedHeader.Returns(Build.A.BlockHeader.WithNumber(1).WithStateRoot(TestItem.KeccakA).TestObject);
             blockTree.LowestInsertedBodyNumber.Returns(2);
@@ -248,7 +248,7 @@ namespace Nethermind.Synchronization.Test
                 DownloadReceiptsInFastSync = false,
                 PivotNumber = "1",
             };
-            ProgressTracker progressTracker = new(blockTree, stateDb, LimboLogs.Instance);
+            ProgressTracker progressTracker = new(blockTree, LimboLogs.Instance);
 
             blockTree.LowestInsertedHeader.Returns(Build.A.BlockHeader.WithNumber(1).WithStateRoot(TestItem.KeccakA).TestObject);
             blockTree.LowestInsertedBodyNumber.Returns(1);

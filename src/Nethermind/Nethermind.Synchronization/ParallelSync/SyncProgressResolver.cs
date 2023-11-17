@@ -24,7 +24,6 @@ namespace Nethermind.Synchronization.ParallelSync
 
         private readonly IBlockTree _blockTree;
         private readonly IReceiptStorage _receiptStorage;
-        private readonly IDb _stateDb;
         private readonly IStateFactory _stateFactory;
         private readonly ProgressTracker _progressTracker;
         private readonly ISyncConfig _syncConfig;
@@ -37,7 +36,6 @@ namespace Nethermind.Synchronization.ParallelSync
 
         public SyncProgressResolver(IBlockTree blockTree,
             IReceiptStorage receiptStorage,
-            IDb stateDb,
             IStateFactory stateFactory,
             ProgressTracker progressTracker,
             ISyncConfig syncConfig,
@@ -46,7 +44,6 @@ namespace Nethermind.Synchronization.ParallelSync
             _logger = logManager?.GetClassLogger() ?? throw new ArgumentNullException(nameof(logManager));
             _blockTree = blockTree ?? throw new ArgumentNullException(nameof(blockTree));
             _receiptStorage = receiptStorage ?? throw new ArgumentNullException(nameof(receiptStorage));
-            _stateDb = stateDb ?? throw new ArgumentNullException(nameof(stateDb));
             _stateFactory = stateFactory ?? throw new ArgumentNullException(nameof(stateFactory));
             _progressTracker = progressTracker ?? throw new ArgumentNullException(nameof(progressTracker));
             _syncConfig = syncConfig ?? throw new ArgumentNullException(nameof(syncConfig));

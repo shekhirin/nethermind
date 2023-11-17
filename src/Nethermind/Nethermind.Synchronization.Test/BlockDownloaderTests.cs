@@ -954,7 +954,7 @@ namespace Nethermind.Synchronization.Test
             private ProgressTracker? _progressTracker;
 
             private ProgressTracker ProgressTracker => _progressTracker ??=
-                new(BlockTree, _stateDb, LimboLogs.Instance);
+                new(BlockTree, LimboLogs.Instance);
 
             private ISyncProgressResolver? _syncProgressResolver;
 

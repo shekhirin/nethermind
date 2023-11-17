@@ -83,7 +83,7 @@ namespace Nethermind.Synchronization
             _blockTree = blockTree ?? throw new ArgumentNullException(nameof(blockTree));
             _receiptStorage = receiptStorage ?? throw new ArgumentNullException(nameof(receiptStorage));
             _syncConfig = syncConfig ?? throw new ArgumentNullException(nameof(syncConfig));
-            _snapProvider = snapProvider ?? throw new ArgumentNullException(nameof(snapProvider));
+            _snapProvider = snapProvider!;
             _blockDownloaderFactory = blockDownloaderFactory ?? throw new ArgumentNullException(nameof(blockDownloaderFactory));
             _pivot = pivot ?? throw new ArgumentNullException(nameof(pivot));
             _syncPeerPool = peerPool ?? throw new ArgumentNullException(nameof(peerPool));
@@ -134,8 +134,8 @@ namespace Nethermind.Synchronization
 
         private void SetupDbOptimizer()
         {
-            new SyncDbTuner(_syncConfig, _snapSyncFeed, _bodiesFeed, _receiptsFeed, _dbProvider.StateDb, _dbProvider.CodeDb,
-                _dbProvider.BlocksDb, _dbProvider.ReceiptsDb);
+            // new SyncDbTuner(_syncConfig, _snapSyncFeed, _bodiesFeed, _receiptsFeed, _dbProvider.StateDb, _dbProvider.CodeDb,
+               // _dbProvider.BlocksDb, _dbProvider.ReceiptsDb);
         }
 
         private void StartFullSyncComponents()

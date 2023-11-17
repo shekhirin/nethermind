@@ -54,7 +54,7 @@ namespace Nethermind.Synchronization.Test
             NodeStatsManager stats = new(timerFactory, LimboLogs.Instance);
             _pool = new SyncPeerPool(_blockTree, stats, new TotalDifficultyBetterPeerStrategy(LimboLogs.Instance), LimboLogs.Instance, 25);
             SyncConfig syncConfig = new();
-            ProgressTracker progressTracker = new(_blockTree, dbProvider.StateDb, LimboLogs.Instance);
+            ProgressTracker progressTracker = new(_blockTree, LimboLogs.Instance);
             SnapProvider snapProvider = new(progressTracker, dbProvider, LimboLogs.Instance);
 
             TrieStore trieStore = new(_stateDb, LimboLogs.Instance);

@@ -60,6 +60,7 @@ namespace Nethermind.State
             if (treeVisitor is RootCheckVisitor rootCheck)
             {
                 rootCheck.HasRoot = _factory.HasRoot(rootHash);
+                return;
             }
 
             throw new NotImplementedException($"The type of visitor {treeVisitor.GetType()} is not handled now");

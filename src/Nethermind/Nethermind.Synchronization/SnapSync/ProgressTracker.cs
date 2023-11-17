@@ -10,7 +10,6 @@ using System.Threading;
 using Nethermind.Blockchain;
 using Nethermind.Core;
 using Nethermind.Core.Crypto;
-using Nethermind.Db;
 using Nethermind.Logging;
 using Nethermind.State.Snap;
 
@@ -25,6 +24,7 @@ namespace Nethermind.Synchronization.SnapSync
         private const int CODES_BATCH_SIZE = 1_000;
         public const int HIGH_CODES_QUEUE_SIZE = CODES_BATCH_SIZE * 5;
         private readonly byte[] ACC_PROGRESS_KEY = Encoding.ASCII.GetBytes("AccountProgressKey");
+        private byte[]? _progressKey;
 
         // This does not need to be a lot as it spawn other requests. In fact 8 is probably too much. It is severely
         // bottlenecked by _syncCommit lock in SnapProviderHelper, which in turns is limited by the IO.
@@ -38,7 +38,6 @@ namespace Nethermind.Synchronization.SnapSync
         private int _activeAccRefreshRequests;
 
         private readonly ILogger _logger;
-        private readonly IDb _db;
 
         // Partitions are indexed by its limit keccak/address as they are keep in the request struct and remain the same
         // throughout the sync. So its easy.
@@ -55,10 +54,9 @@ namespace Nethermind.Synchronization.SnapSync
 
         private readonly Pivot _pivot;
 
-        public ProgressTracker(IBlockTree blockTree, IDb db, ILogManager logManager, int accountRangePartitionCount = 8)
+        public ProgressTracker(IBlockTree blockTree, ILogManager logManager, int accountRangePartitionCount = 8)
         {
             _logger = logManager.GetClassLogger() ?? throw new ArgumentNullException(nameof(logManager));
-            _db = db ?? throw new ArgumentNullException(nameof(db));
 
             _pivot = new Pivot(blockTree, logManager);
 
@@ -393,7 +391,7 @@ namespace Nethermind.Synchronization.SnapSync
         {
             // Note, as before, the progress actually only store MaxValue or 0. So we can't actually resume
             // snap sync on restart.
-            byte[] progress = _db.Get(ACC_PROGRESS_KEY);
+            byte[] progress = _progressKey;
             if (progress is { Length: 32 })
             {
                 ValueKeccak path = new ValueKeccak(progress);
@@ -416,7 +414,7 @@ namespace Nethermind.Synchronization.SnapSync
 
         private void FinishRangePhase()
         {
-            _db.Set(ACC_PROGRESS_KEY, ValueKeccak.MaxValue.Bytes);
+            _progressKey = ValueKeccak.MaxValue.Bytes.ToArray();
         }
 
         private void LogRequest(string reqType)

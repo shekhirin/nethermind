@@ -325,7 +325,7 @@ namespace Nethermind.Synchronization.Test
                 PoSSwitcher poSSwitcher = new(mergeConfig, syncConfig, dbProvider.MetadataDb, BlockTree, new TestSingleReleaseSpecProvider(Constantinople.Instance), _logManager);
                 IBeaconPivot beaconPivot = new BeaconPivot(syncConfig, dbProvider.MetadataDb, BlockTree, _logManager);
 
-                ProgressTracker progressTracker = new(BlockTree, dbProvider.StateDb, LimboLogs.Instance);
+                ProgressTracker progressTracker = new(BlockTree, LimboLogs.Instance);
                 SnapProvider snapProvider = new(progressTracker, dbProvider, LimboLogs.Instance);
 
                 TrieStore trieStore = new(stateDb, LimboLogs.Instance);

@@ -128,6 +128,7 @@ namespace Nethermind.Init.Steps
             //         getApi.LogManager);
 
             IWorldState worldState = new WorldState(stateFactory, codeDb, getApi.LogManager);
+            setApi.WorldState = worldState;
 
             TrieStoreBoundaryWatcher trieStoreBoundaryWatcher = new(stateFactory, _api.BlockTree!, _api.LogManager);
             getApi.DisposeStack.Push(trieStoreBoundaryWatcher);
@@ -250,51 +251,7 @@ namespace Nethermind.Init.Steps
             setApi.HealthHintService = CreateHealthHintService();
             setApi.BlockProductionPolicy = new BlockProductionPolicy(miningConfig);
 
-            InitializeFullPruning(pruningConfig, initConfig, _api, stateReader);
-
             return Task.CompletedTask;
-        }
-
-        private static void InitializeFullPruning(
-            IPruningConfig pruningConfig,
-            IInitConfig initConfig,
-            INethermindApi api,
-            IStateReader stateReader)
-        {
-            IPruningTrigger? CreateAutomaticTrigger(string dbPath)
-            {
-                long threshold = pruningConfig.FullPruningThresholdMb.MB();
-
-                switch (pruningConfig.FullPruningTrigger)
-                {
-                    case FullPruningTrigger.StateDbSize:
-                        return new PathSizePruningTrigger(dbPath, threshold, api.TimerFactory, api.FileSystem);
-                    case FullPruningTrigger.VolumeFreeSpace:
-                        return new DiskFreeSpacePruningTrigger(dbPath, threshold, api.TimerFactory, api.FileSystem);
-                    default:
-                        return null;
-                }
-            }
-
-            if (pruningConfig.Mode.IsFull())
-            {
-                IDb stateDb = api.DbProvider!.StateDb;
-                if (stateDb is IFullPruningDb fullPruningDb)
-                {
-                    string pruningDbPath = fullPruningDb.GetPath(initConfig.BaseDbPath);
-                    IPruningTrigger? pruningTrigger = CreateAutomaticTrigger(pruningDbPath);
-                    if (pruningTrigger is not null)
-                    {
-                        api.PruningTrigger.Add(pruningTrigger);
-                    }
-
-                    IDriveInfo? drive = api.FileSystem.GetDriveInfos(pruningDbPath).FirstOrDefault();
-                    FullPruner pruner = new(fullPruningDb, api.PruningTrigger, pruningConfig, api.BlockTree!,
-                        stateReader, api.ProcessExit!, ChainSizes.CreateChainSizeInfo(api.ChainSpec.ChainId),
-                        drive, api.LogManager);
-                    api.DisposeStack.Push(pruner);
-                }
-            }
         }
 
         private static void InitBlockTraceDumper()

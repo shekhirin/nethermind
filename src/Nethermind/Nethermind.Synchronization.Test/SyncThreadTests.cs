@@ -335,7 +335,7 @@ namespace Nethermind.Synchronization.Test
                 new BlocksConfig(),
                 logManager);
 
-            ProgressTracker progressTracker = new(tree, dbProvider.StateDb, LimboLogs.Instance);
+            ProgressTracker progressTracker = new(tree, LimboLogs.Instance);
             SnapProvider snapProvider = new(progressTracker, dbProvider, LimboLogs.Instance);
 
             SyncProgressResolver resolver = new(
